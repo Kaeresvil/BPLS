@@ -11,6 +11,7 @@ use App\Models\Lessor;
 use App\Models\OwnerInformation;
 use App\Models\Document;
 use App\Models\Appointment;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -73,11 +74,12 @@ class ApplicationController extends Controller
        $this->createBusinessInformations($request, $application->id);
        $this->createLessors($request, $application->id);
        $this->createOwnersInformation($request, $application->id);
+       $this->createNotification($request, $application->id, true);
 
        return response()->json([
         'message' => 'Applicattion Submitted Successfully',
         'data' => $application
-    ], 200);
+    ], 220);
     }
 
     public function createBusinessActivity($activities, $id)
@@ -161,6 +163,7 @@ class ApplicationController extends Controller
        $application->middle_name = $request->middle_name;
        $application->business_name = $request->business_name;;
        $application->trade_name = $request->trade_name;
+       $application->status = $request->status == 'RETURNED' ? "SUBMITTED":$application->status;
        $application->update();
 
        $this->updateBusinessActivity($request->business_activity, $application->id);
@@ -168,10 +171,14 @@ class ApplicationController extends Controller
        $this->updateLessors($request, $application->id);
        $this->updateOwnersInformation($request, $application->id);
 
+       if($request->status == 'RETURNED'){
+        $this->createNotification($request, $application->id, false);
+       }
+
        return response()->json([
         'message' => 'Applicattion Updated Successfully',
         'data' => $application
-    ], 200);
+    ], 220);
     }
 
     public function updateBusinessActivity($activities, $id)
@@ -319,6 +326,43 @@ class ApplicationController extends Controller
             'data' => []
         ], 200);
     }
+    public function updateDocuments(Request $request)
+    {
+
+       if (isset($request['f_id'])) {
+        $deleted = Document::whereNotIn('id', $request['f_id'])->where('application_id', '=', $request['id'])->delete();
+        log::info($deleted);
+       }else{
+        Document::where('application_id', '=', $request['id'])->delete();
+       }
+
+       if (isset($request['remove'])) {
+        foreach ($request['remove'] as $path) {
+            Storage::disk('local')->delete($path);
+        }
+       }
+
+        if (isset($request['files'])) {
+            foreach ($request['files'] as $key => $value) {
+                $fileName = time() . '_' . $value->getClientOriginalName();
+                $folderName = 'public';
+                $path = Storage::disk('local')->putFileAs($folderName, $value, $fileName);
+
+                Document::create([
+                    'application_id' => $request['id'],
+                    'file_name' => $fileName,
+                    'file_path' =>  $path
+                ]);
+
+            }
+        }
+       
+
+        return response()->json([
+            'message' => 'Application Updated Successfully',
+            'data' => []
+        ], 200);
+    }
 
     public function approve(Request $request, $id)
     {
@@ -326,6 +370,8 @@ class ApplicationController extends Controller
         $post->status = 'APPROVED';
         $post->remarks = $request->remarks;
         $post->update();
+
+        $this->ApproveAndReeturnNotification($post, $id);
         return response()->json([
             'message' => 'Application Approved Successfully',
             'data' => $post
@@ -338,6 +384,7 @@ class ApplicationController extends Controller
         $post->status = 'RETURNED';
         $post->remarks = $request->remarks;
         $post->update();
+        $this->ApproveAndReeturnNotification($post, $id);
         return response()->json([
             'message' => 'Application Returned Successfully',
             'data' => $post
@@ -345,16 +392,25 @@ class ApplicationController extends Controller
     }
     public function claimed(Request $request, $id)
     {
+
+
+        $appointment = Appointment::where('application_id',$id)->first();
+        if(!$appointment){
+            throw ValidationException::withMessages([
+                'authentication' => 'No appointment, please set appointment to claim!',
+            ]);
+        }
+        $appointment->date_claimed = Carbon::now()->format('Y-m-d');
+        $appointment->is_claimed = 1;
+        $appointment->update();
+
         $post = Application::find($id);
         $post->status = 'CLAIMED';
         $post->claimed_by = $request->claimed_by;
         $post->claimed_date = Carbon::now()->format('Y-m-d H:i:s');
         $post->update();
 
-        $appointment = Appointment::where('application_id',$id)->first();
-        $appointment->date_claimed = Carbon::now()->format('Y-m-d');
-        $appointment->is_claimed = 1;
-        $appointment->update();
+        $this->ApproveAndReeturnNotification($post, $id);
         return response()->json([
             'message' => 'Application Claimed Successfully',
             'data' => $post
@@ -364,6 +420,30 @@ class ApplicationController extends Controller
     {
         $post = Application::find($id);
         return response()->json($post);
+    }
+
+    public function createNotification($params, $id, $iscreated)
+    {
+        $notification = new Notification();
+
+        $description = $iscreated ? "Reference No.: ".$params->ref_no." needs your approval.":"Reference No.: ".$params->ref_no." RE-SUBMITTED, needs your approval.";
+        $notification->application_id = $id;
+        $notification->description = $description;
+        $notification->is_read = 0;
+        $notification->is_ForStaff = 1;
+        $notification->save();
+    }
+    public function ApproveAndReeturnNotification($params, $id)
+    {
+        $notification = new Notification();
+
+        $status = $params->status;
+        $notification->user_id = $params->applicant_id;
+        $notification->application_id = $id;
+        $notification->description = "Reference No.: ".$params->ref_no." has been ".$status.".";
+        $notification->is_read = 0;
+        $notification->is_ForStaff = 0;
+        $notification->save();
     }
 
 

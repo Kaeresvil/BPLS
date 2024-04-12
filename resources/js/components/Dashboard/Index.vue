@@ -65,8 +65,8 @@
 
              </a-modal>
             <div style="position: relative"></div>
-                    <BellFilled  @click="openNotif = !openNotif" style="cursor: pointer; margin-left: 42%; font-size: 23px; margin-top: 10px; color: #404040; " />
-                    <a-badge
+                    <BellFilled v-if="!$route.path.includes('signup')"  @click="openNotif = !openNotif" style="cursor: pointer; margin-left: 42%; font-size: 23px; margin-top: 10px; color: #404040; " />
+                    <a-badge v-if="!$route.path.includes('signup')"
                         style="position: relative; top: 1px; left: -7px; cursor: pointer;"
                         @click="openNotif = !openNotif"
                         :count="notificationCount"
@@ -106,16 +106,15 @@
                                 >
                                 </div> -->
                             </div>
-                            <!-- <div
-                                v-for="(notif, index) in allNotification"
+                            <div
+                                v-for="(notif, index) in notifications"
                                 :key="index"
                                 class="notif"
                                 :class="notif.is_read ? '' : 'notifUnread'"
                                 @click="goToNotif(notif)"
                             >
-                                Outage Log ID: <b>{{ notif.outage.outage_code }}</b>
                                 {{ notif.description }}
-                            </div> -->
+                            </div>
                             <div
                                 class="notif"
                                 style="
@@ -185,13 +184,31 @@ export default defineComponent({
     const date = ref()
     const time = ref()
     const day = ref()
-    const notificationCount = ref(5)
+    const notificationCount = ref()
     const isRead = ref("All")
     const current = ref(['business_permit']);
     const form = reactive({
     id: '',
-    total: ''
+    total: '',
+    role:''
     })
+    const notifications = ref([])
+
+    const index = (payload = {page: 1, admin: form.role}) => {
+          
+                   axios.get('/backend/notifications', {params: {...payload}})
+                    .then(response => {
+                        notifications.value = response.data.data.data;
+                        const unread = response.data.data.data.filter(
+                        (notif) => notif.is_read === 0
+                        );
+                        notificationCount.value = unread.length;
+                       
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                    });
+        }
 
     onMounted(() =>{
         current.value[0] = route.path
@@ -200,6 +217,8 @@ export default defineComponent({
                     .then(response => {
                         loading.value = true
                         authUser.value = response.data
+                       form.role = authUser.value.role
+                       index();
                     })
 
         setInterval(() => {
@@ -222,6 +241,25 @@ export default defineComponent({
                     });
 
     };
+
+    const goToNotif = (notif) => {
+        axios.put(`/backend/read/${notif.id}`)
+        .then(response => { 
+            router.push({path: '/edit/business-application/' + response.data.data.application_id,
+            query: {archive: 'false'}
+            })
+            setTimeout(()=>{
+            window.location.reload()
+          },100)
+
+                 
+        })
+        .catch(function (error) {
+            loading.value = false
+        });
+
+    };
+
     const submitOccupancy = () => {
         axios.post(`/backend/occupancy`,form)
         .then(res => { 
@@ -265,10 +303,12 @@ e.preventDefault()
         openNotif,
         isRead,
         visibleModal,
+        notifications,
 
         logout,
         appointment,
-        submitOccupancy
+        submitOccupancy,
+        goToNotif
 
 
     };

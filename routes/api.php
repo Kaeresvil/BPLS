@@ -7,6 +7,7 @@ use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Role\RoleController;
 use App\Http\Controllers\Application\ApplicationController;
 use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\OccupancyController;
 
 /*
@@ -62,6 +63,7 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
      Route::put('application/claimed/{id}', [ApplicationController::class,'claimed']);
      Route::post('application', [ApplicationController::class,'store']);
      Route::post('documents', [ApplicationController::class,'uploadDocuments']);
+     Route::post('documents/update', [ApplicationController::class,'updateDocuments']);
 
      Route::get('schedule/available', [AppointmentController::class,'availableDate']);
      Route::get('appointment', [AppointmentController::class,'index']);
@@ -72,5 +74,7 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
      Route::post('occupancy', [OccupancyController::class,'store']);
      Route::get('occupancy', [OccupancyController::class,'show']);
 
+     Route::get('notifications', [NotificationController::class,'index']);
+     Route::put('read/{id}', [NotificationController::class,'read']);
 
 });
