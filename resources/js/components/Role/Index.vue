@@ -113,12 +113,7 @@ setup(){
             title: 'Description',
             dataIndex: 'description',
         },
-        {
-            title: 'Action',
-            dataIndex: 'action',
-            slots: { customRender: 'action' },
-            align: 'center'
-        },
+       
         ];
 
         const index = (payload = {page: 1}) => {

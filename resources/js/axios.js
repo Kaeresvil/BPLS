@@ -18,7 +18,7 @@ const axiosRequest = axios.create({
 axiosRequest.interceptors.response.use(
     function(response) {
         // Do something with response data
-    if(response.config.method != 'get'){
+    if(response.config.method != 'get' && response.status != 220){
         Swal.fire({
             position: "top-end",
             icon: "success",

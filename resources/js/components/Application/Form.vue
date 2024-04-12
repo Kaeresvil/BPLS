@@ -38,7 +38,7 @@
  
  <div v-if="$route.path.includes('edit') && !isApplicant || form.status == 'APPROVED' || form.status == 'CLAIMED'" style="margin-top: -20px; width: 70%; margin: auto;" class="steps-content">
         <a-row style="justify-content: center;">
-            <h3 >Application Form  <h6 style="margin-top: 5px">({{ form.status}})</h6> </h3>   
+            <h3 >Application Form  <h6 style="margin-top: 5px">( {{ form.ref_no +" "+ form.status}} )</h6> </h3>   
         </a-row>
          
 
@@ -123,7 +123,9 @@
 
     <a-col class="gutter-row" :span="6">
  
-        <div class="steps-content" style="margin-top: -5px;" >
+        <div class="steps-content-1" style="margin-top: -5px;" >
+          <h4>{{ form.ref_no }}</h4>
+          <br>
 
         <h6>TYPE OF APPLICATION</h6>
 
@@ -691,15 +693,35 @@
               </a-button>
         </a-row>
 
-
-
+         
+          <b>Instruction: </b>Please upload only the following documents; <br>
+           1. Single Proprietorship (One Owner) - DTI only.<br>
+           2. Partnership (2-3 members with articles of partnership) - Security and Exchange Commision.<br>
+           3. Corporation (could be 1 or sole CEO have 4 members and up with articles of incorporation)  - Securities and Exchange Commision.<br>
+           4. Cooperative (many members with articles of cooperation) - Cooperative Development Authority. 
+          
 
 
               <a-table row-key="id" size="small" :columns="columns" :data-source="form.files" bordered style="overflow-x: auto;overflow-y: auto;" >
                 <template v-slot:action="{ record }">
-
                   <a-space>
                       <a-button class="buttondelete" type="danger" size="small" @click="remove(record)" > Remove</a-button>
+                  </a-space>
+                </template>
+                <template v-slot:file="{ record }">
+                  
+                  <a-image v-if="!record.name" style="margin-left: 2px;" :width="120"  :height="120" :src="'/storage/' + record.file_name" />
+                  <a-space v-if="record.name" >
+                       {{ record.name }}
+                  </a-space>
+                </template>
+                <template v-slot:status="{ record }">
+                  
+                  <a-space v-if="record.name" >
+                      NEW
+                  </a-space>
+                  <a-space v-if="!record.name" >
+                      UPLOADED
                   </a-space>
                 </template>
             </a-table>
@@ -910,6 +932,7 @@ setup() {
   business_activity: [],
   file: '',
   files: [],
+  files_remove: [],
   claimed_by:'',
   claimed_date:''
 })
@@ -917,7 +940,16 @@ setup() {
     const columns = [
       {
           title: 'File',
-          dataIndex: 'name'
+          dataIndex: 'name',
+          slots: { customRender: "file" },
+          width: '35%',
+          align: 'center'
+      },
+      {
+          title: 'Status',
+          dataIndex: 'name',
+          slots: { customRender: "status" },
+          align: 'center'
       },
       {
         title: "Action",
@@ -1093,6 +1125,7 @@ setup() {
                         form.middle_name = res.data.middle_name
                         form.business_name = res.data.business_name
                         form.trade_name = res.data.trade_name
+                        form.ref_no = res.data.ref_no
 
                         form.files = res.data.documents
                         form.business_activity = res.data.business_activity
@@ -1191,10 +1224,30 @@ setup() {
         });
       }else{
         loading.value = true
+        const formData = new FormData();
+        formData.append("id", route.params.id);
+          for (var i = 0; i < form.files_remove.length; i++) {
+            formData.append("remove[" + i + "]", form.files_remove[i]);
+          }
+          for (var i = 0; i < form.files.length; i++) {
+              if(form.files[i].name != null){
+                let file = form.files[i];
+                formData.append("files[" + i + "]", file);
+              }else{
+                formData.append("f_id[" + i + "]", form.files[i].id);
+              }
+            }
         axios.put(`/backend/application/update/${route.params.id}`,form)
         .then(response => { 
-            loading.value = false,
-            router.push('/business-application')
+          axios.post("backend/documents/update",formData)
+                .then(response => { 
+                  router.push('/business-application')
+                })
+                .catch(function (error) {
+                    loading.value = false
+                });
+            loading.value = false
+            // router.push('/business-application')
 
                  
         })
@@ -1245,6 +1298,7 @@ setup() {
       form.files.map(function (value, key) {
         if (value.id == row.id) {
             form.files.splice(key, 1);
+            form.files_remove.push(row.file_path)
         }
       });
     };
@@ -1296,7 +1350,6 @@ setup() {
       }else{
         visible.value = false
       }
-      console.log(form)
 
     }
     const toAppointment = () => {
@@ -1439,6 +1492,15 @@ border-radius: 10px;
 }
 
 .steps-content {
+  margin-top: 75px;
+  border: 1px solid #e9e9e9;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  min-height: 200px;
+  /* text-align: center; */
+  padding: 20px;
+}
+.steps-content-1 {
   margin-top: 75px;
   border: 1px solid #e9e9e9;
   border-radius: 6px;
