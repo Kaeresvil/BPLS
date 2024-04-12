@@ -54,6 +54,15 @@
                   View
                     </a-button>
 
+                    <a-button
+                    class="buttondelete"
+                    size="small"
+                    @click="deleteRecord(record)"
+                    >
+                   Delete
+                    </a-button>
+
+
                 </template>
 
                 <template v-slot:taxpayer="{ record }">
@@ -99,9 +108,11 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, reactive,toRefs } from 'vue';
+import { createVNode, defineComponent, ref, onMounted, reactive,toRefs } from 'vue';
 import axios from "../../axios"
 import { useRouter } from 'vue-router'
+import { Modal } from 'ant-design-vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
 export default defineComponent({
 components:{},
@@ -212,6 +223,47 @@ setup(){
             query: {archive: 'false'}
             })
     }
+
+    const deleteRecord = (record) => {
+
+            Modal.confirm({
+            title: () => 'Are you sure? You want to delete these items?',
+            icon: () => createVNode(ExclamationCircleOutlined),
+            okText: () => "Yes",
+            cancelText: () => "No",
+            onOk() {
+            return new Promise((resolve, reject) => {
+
+                axios.delete(`/backend/application/${record.id}`)
+                .then(response => { 
+                    setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                    index()     
+                })
+                .catch(function (error) {
+                    loading.value = false
+                });
+                
+            }).catch(() => console.log('Oops errors!'));
+            },
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            onCancel() {},
+            okButtonProps: {
+                style: {
+                backgroundColor: '#24792f', // Change the color of the OK button here
+                borderColor: '#24792f', // Change the border color of the OK button here
+                color: 'white', // Change the text color of the OK button here
+                },
+            },
+            });
+            // axios.delete(`/backend/user/delete/${record.id}`)
+            // .then(response => { 
+            //     index()     
+            // })
+            // .catch(function (error) {
+            //     loading.value = false
+            // });
+    }
+
     onMounted(index)
 
     return {
@@ -220,6 +272,7 @@ setup(){
         debounce: createDebounce(),
         editRecord,
         approval,
+        deleteRecord,
 
         form,
         application,

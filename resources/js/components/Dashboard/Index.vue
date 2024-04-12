@@ -124,7 +124,7 @@
                                 font-size: 14px;
                                 border-radius: 0 0 20px 20px;
                                 "
-                                @click="$router.push('/notification')"
+                                @click="$router.push('/notification'),openNotif = !openNotif"
                             >
                                 See more
                             </div>
@@ -212,7 +212,7 @@ export default defineComponent({
 
     onMounted(() =>{
         current.value[0] = route.path
-
+    if(!route.path.includes('signup')){
         axios.get('backend/auth_user')
                     .then(response => {
                         loading.value = true
@@ -220,7 +220,7 @@ export default defineComponent({
                        form.role = authUser.value.role
                        index();
                     })
-
+        }
         setInterval(() => {
             date.value = moment().format('LL')
             time.value = moment().format('LTS')

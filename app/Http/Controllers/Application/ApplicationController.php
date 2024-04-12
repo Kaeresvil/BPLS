@@ -421,6 +421,30 @@ class ApplicationController extends Controller
         $post = Application::find($id);
         return response()->json($post);
     }
+    public function delete($id)
+    {
+        $post = Application::find($id);
+        $post->delete();
+        BusinessActivity::where('application_id', $id)->delete();
+        BusinessInformation::where('application_id', $id)->delete();
+        Lessor::where('application_id', $id)->delete();
+        OwnerInformation::where('application_id', $id)->delete();
+        Appointment::where('application_id', $id)->delete();
+
+        $documents = Document::where('application_id', '=', $id)->get();
+
+        foreach($documents as $docu){
+            Document::where('id', $docu->id)->delete();
+            Storage::disk('local')->delete($docu->file_path);
+        }
+
+        $response = [
+            'data' => $post,
+            'message' => 'Application Deleted Successfully',
+    
+        ];
+        return response()->json($response);
+    }
 
     public function createNotification($params, $id, $iscreated)
     {

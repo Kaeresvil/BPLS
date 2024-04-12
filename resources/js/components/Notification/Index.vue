@@ -18,62 +18,38 @@
                 </div>
                 <a-divider />
 
-                <a-table
-
-                    size="small"
-                    row-key="id"
-                   
-                    :data-source="application.data"
-                    :pagination="false"
-                    :loading="loading"
-                    style="overflow-x: auto"
+                <div class="card-container">
+                <a-list
+                    item-layout="horizontal"
+                    :data-source="items.data"
                 >
-
-                <template v-slot:action="{ record }">
-                    <a-button
-                    class="buttoncreate"
-                    @click="editRecord(record)"
-                    size="small"
+                    <template #renderItem="{ item }">
+                    <a-list-item
+                        class="notif"
+                        style="padding: 10px;cursor: pointer; color: black;"
+                        :style="item.is_read ? '' : 'background: #bbe6ff; font-weight: bold;  color: black'"
+                        
+                        @click="goToNotif(item)"
                     >
-                  View
-                    </a-button>
+                        <a-list-item-meta :description="item.description" >
+                        <template #title>
+                      
+                        </template>
 
-                </template>
+                        </a-list-item-meta>
+                    </a-list-item>
+                    </template>
+                </a-list>
+                <br>
 
-                <template v-slot:taxpayer="{ record }">
-                    <span>{{ record.first_name +' '+ record.last_name  }}</span>
-                </template>
-
-
-                </a-table>
-
-
-
-
-
-                
-            <a-row style="margin: 15px 15px" v-if="true">
-                <a-col class="search" span="24">
-                <div>
-                    <span
-                    >{{ application.from }} - {{ application.to }} of
-                    {{ application.total }}</span
-                    >
+                <a-pagination
+                    v-model:current="form.page"
+                    :total="items.total"
+                    :page-size="15"
+                    show-less-items
+                    @change="changeNotifPage(form.page)"
+                />
                 </div>
-                <div>
-                    <a-pagination
-                    size="small"
-                    :total="application.total"
-                    show-size-changer
-                    @change="onChange"
-                    @showSizeChange="onShowLimit"
-                    :current="form.page"
-                    :default-page-size="15"
-                    :page-size-options="['15', '30', '45', '60']"
-                    />
-                </div>
-                </a-col>
-            </a-row>
 
         
         
@@ -90,117 +66,77 @@ import { useRouter } from 'vue-router'
 export default defineComponent({
 components:{},
 setup(){
-    const application = ref([])
+    const items = ref([])
     const loading = ref(true)
     const router = useRouter()
     const form = reactive({
       page: 1,
       limit: 15,
       search: "",
+      role:''
     });
 
-    const columns = [
-        {
-            title: 'Application Reference No.',
-            dataIndex: 'ref_no',
-            align: 'center'
-        },
-        {
-            title: 'Appointment Date',
-            dataIndex: 'type_of_business',
-            // slots: { customRender: 'type_business' },
-            align: 'center'
-        },
-        {
-            title: 'Claim',
-            dataIndex: 'first_name',
-            slots: { customRender: 'is_claim' },
-            align: 'center'
-        },
-        {
-            title: 'Applicant',
-            dataIndex: 'type_of_application',
-            slots: { customRender: 'applicant' },
-            align: 'center'
-        },
-        {
-            title: 'Claimed By',
-            dataIndex: 'status',
-            align: 'center'
-        },
-        {
-            title: 'Action',
-            dataIndex: 'action',
-            slots: { customRender: 'action' },
-            align: 'center'
-        },
-        ];
 
-        const index = (payload = {page: 1}) => {
+
+        const index = (payload = {page: 1, admin: form.role}) => {
             loading.value = false;
-            //        axios.get('/backend/application', {params: {...payload}})
-            //         .then(response => {
-            //             application.value = response.data.data;
-            //             loading.value = false;
-            //         })
-            //         .catch(function(error) {
-            //             console.log(error);
-            //         });
+            axios.get('/backend/notifications', {params: {...payload}})
+                    .then(response => {
+                        items.value = response.data.data;
+                        console.log('items', items.value)
+                        // const unread = response.data.data.data.filter(
+                        // (notif) => notif.is_read === 0
+                        // );
+                        // notificationCount.value = unread.length;
+                       
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                    });
 
 
         }
+        const changeNotifPage = (page) => {
+            index({ page: page , admin: form.role});
+            };
 
-        const onChange = (payload) => {
-        const { page } = toRefs(form);
-        page.value = payload;
-        filter(form);
-        };
+            const goToNotif = (notif) => {
+        axios.put(`/backend/read/${notif.id}`)
+        .then(response => { 
+            router.push({path: '/edit/business-application/' + response.data.data.application_id,
+            query: {archive: 'false'}
+            })
+            setTimeout(()=>{
+            window.location.reload()
+          },100)
 
-    const onShowLimit = (current, pageSize) => {
-      const { limit } = toRefs(form);
-      const { page } = toRefs(form);
-      page.value = 1;
-      limit.value = pageSize;
-      filter(form);
+                 
+        })
+        .catch(function (error) {
+            loading.value = false
+        });
+
     };
 
-    function createDebounce() {
-      let timeout = null;
-      return function (fnc, delayMs) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-          const { page } = toRefs(form);
-          page.value = 1;
-          filter(form);
-        }, delayMs || 500);
-      };
-    }
-        const filter = (payload) => {
-      index(payload)
-    }
-        const editRecord = (record) => {
-            router.push({path: '/edit/business-application/' + record.id,
-            query: {archive: 'false'}
-            })
-    }
-        const approval = (record) => {
-            router.push({path: '/edit/business-application/' + record.id,
-            query: {archive: 'false'}
-            })
-    }
-    onMounted(index)
+   
+    onMounted(() =>{
+
+        axios.get('backend/auth_user')
+                    .then(response => {
+                       form.role = response.data.role
+                       index();
+                    })
+       
+    })
 
     return {
-        onChange,
-        onShowLimit,
-        debounce: createDebounce(),
-        editRecord,
-        approval,
+        changeNotifPage,
+        goToNotif,
 
         form,
-        application,
+        items,
         loading,
-        columns
+
     }
 }
 })
@@ -221,5 +157,7 @@ setup(){
 }
 
 
-
+.notif:hover {
+  background: #b2cfe0;
+}
 </style>

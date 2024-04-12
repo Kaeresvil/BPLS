@@ -116,10 +116,13 @@ setup() {
         });
         }
 
-     
+        // Check if the date is in the past
+        const isPastDate = value.isBefore(dayjs(), 'day');
+        // const isToday = value.isSame(dayjs(), 'day');
 
 
-        return dayOfWeek === 0 || dayOfWeek === 6 || notAvail == true
+
+        return dayOfWeek === 0 || dayOfWeek === 6 || notAvail || isPastDate 
 
 
     };
@@ -184,14 +187,18 @@ setup() {
 
     }else if(!route.path.includes("edit")){
 
+      setTimeout(() => {
         axios.get('/backend/schedule/available', {params: {date: moment(date.value).format("YYYY-MM-DD")}})
                     .then(response => {
-
+                      notAvailableDay.value = response.data
                         loading.value = false;
                     })
                     .catch(function(error) {
                         console.log(error);
             });
+      }, 1000);
+
+       
 
 
     }
