@@ -2,10 +2,10 @@
              <nav v-if="loading || $route.path.includes('signup')" class="navbar" style="background-color: #f0f0f0; position: fixed; right: 0; left: 0; z-index: 1030; top: 0; height: 60px; ">
 
             <div  style="width: 100vw; display: flex;">
-                <div style=" width: 12vw;">
+                <div style=" width: 201px;">
                     <h3 style="margin-top: 7px; margin-left: 8px;">CITIZENCARE</h3>
                 </div>
-            <div v-if="!$route.path.includes('signup')" style="width: 40vw;">
+            <div v-if="!$route.path.includes('signup')" style="width: 40vw; margin-left: 2px;">
                 <a-menu v-model:selectedKeys="current" mode="horizontal" style=" background-color:#f0f0f0;">
                     <a-menu-item key="/home" @click="$router.push('/home')">
                     <template #icon>
@@ -64,10 +64,10 @@
                         </a-space>
 
              </a-modal>
-            <div style="position: relative"></div>
-                    <BellFilled v-if="!$route.path.includes('signup')"  @click="openNotif = !openNotif" style="cursor: pointer; margin-left: 42%; font-size: 23px; margin-top: 10px; color: #404040; " />
+          <!-- <div style=" width: 50%;"> -->
+                    <BellFilled v-if="!$route.path.includes('signup')"  @click="openNotif = !openNotif" style="cursor: pointer;  font-size: 23px; margin-left: 40%; margin-top: 10px; color: #404040; " />
                     <a-badge v-if="!$route.path.includes('signup')"
-                        style="position: relative; top: 1px; left: -7px; cursor: pointer;"
+                        style=" position: relative; top: 1px; left: -7px;cursor: pointer; "
                         @click="openNotif = !openNotif"
                         :count="notificationCount"
                         :number-style="{
@@ -129,7 +129,7 @@
                                 See more
                             </div>
                             </div>
-
+                        <!-- </div> -->
             </div>
             
 
@@ -245,12 +245,8 @@ export default defineComponent({
     const goToNotif = (notif) => {
         axios.put(`/backend/read/${notif.id}`)
         .then(response => { 
-            router.push({path: '/edit/business-application/' + response.data.data.application_id,
-            query: {archive: 'false'}
-            })
-            setTimeout(()=>{
-            window.location.reload()
-          },100)
+            window.location.href = '/edit/business-application/' + response.data.data.application_id
+ 
 
                  
         })
