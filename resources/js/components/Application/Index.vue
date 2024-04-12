@@ -227,7 +227,7 @@ setup(){
     const deleteRecord = (record) => {
 
             Modal.confirm({
-            title: () => 'Are you sure? You want to delete these items?',
+            title: () => 'Are you sure? You want to delete this item',
             icon: () => createVNode(ExclamationCircleOutlined),
             okText: () => "Yes",
             cancelText: () => "No",

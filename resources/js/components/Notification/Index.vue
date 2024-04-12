@@ -102,13 +102,10 @@ setup(){
 
             const goToNotif = (notif) => {
         axios.put(`/backend/read/${notif.id}`)
-        .then(response => { 
-            router.push({path: '/edit/business-application/' + response.data.data.application_id,
-            query: {archive: 'false'}
-            })
-            setTimeout(()=>{
-            window.location.reload()
-          },100)
+        .then(response => {
+             
+            window.location.href = '/edit/business-application/' + response.data.data.application_id
+
 
                  
         })
