@@ -1,6 +1,5 @@
 <template>
-
-        
+      
     <div
       class="section"
       style="
@@ -8,11 +7,11 @@
         border-radius: 1rem;
         min-width: 400px;
         box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.1);
-    
-    
       "
     >
 
+    <a-skeleton v-if="loading2" active />
+    <div v-if="!loading2">
     <a-page-header
     title=" BUSINESS PERMIT APPLICATIONS"
     @back="$router.push('/business-application')"
@@ -694,7 +693,7 @@
         </a-row>
 
          
-          <b>Instruction: </b>Please upload only the following documents; <br>
+          <b>Instruction: </b>Please upload only documents listed below; <br>
            1. Single Proprietorship (One Owner) - DTI only.<br>
            2. Partnership (2-3 members with articles of partnership) - Security and Exchange Commision.<br>
            3. Corporation (could be 1 or sole CEO have 4 members and up with articles of incorporation)  - Securities and Exchange Commision.<br>
@@ -828,6 +827,7 @@
           </a-button>
         </a-form-item> -->
     </a-form>
+  </div>
 </div>
  
 </template>
@@ -852,6 +852,7 @@ setup() {
   const router = useRouter();
   const route = useRoute()
   const loading = ref(false)
+  const loading2 = ref(false)
   const visible = ref(false)
   const isApplicant = ref(true)
   const visibleSummaryForm = ref(false)
@@ -1107,6 +1108,7 @@ setup() {
 
         if(route.path.includes("edit")){
             let id = route.params.id
+            loading2.value = true
             var list = []
                    axios.get(`/backend/application/${id}`)
                     .then(res => {
@@ -1186,7 +1188,9 @@ setup() {
                         console.log(error);
                     });
 
-                    console.log('rorm',form)
+                    setTimeout(() => {
+                        loading2.value = false
+                }, 800);
 
         }
 
@@ -1212,6 +1216,7 @@ setup() {
 
            axios.post("backend/documents",formData)
                 .then(response => { 
+                  loading.value = false
                   router.push('/business-application')
                 })
                 .catch(function (error) {
@@ -1363,6 +1368,7 @@ setup() {
   return {
     form,
     loading,
+    loading2,
     current, 
     steps, 
     items,

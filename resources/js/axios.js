@@ -34,8 +34,9 @@ axiosRequest.interceptors.response.use(
     function(error) {
         // Do something with response error
         if (error.response.status == 401) {
-            // window.location.href = "/"
-            console.log('error ax', error)
+            window.localStorage.removeItem("BPLS_TOKEN");
+            window.localStorage.removeItem("AUTH_ROLE");
+            window.location.href = "/"
            
         }
 

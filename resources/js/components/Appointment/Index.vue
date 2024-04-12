@@ -71,9 +71,9 @@
                 <template v-slot:claimed_date="{ record }">
                     <span>{{ record.date_claimed  == null ? '--': record.date_claimed}}</span>
                 </template>
-                <template v-slot:claimed_by="{ record }">
+                <!-- <template v-slot:claimed_by="{ record }">
                     <span>{{ record.application[0].claimed_by == null ? '--': record.application[0].claimed_by}}</span>
-                </template>
+                </template> -->
 
 
                 </a-table>
@@ -154,12 +154,7 @@ setup(){
             slots: { customRender: 'applicant' },
             align: 'center'
         },
-        {
-            title: 'Claimed By',
-            dataIndex: 'status',
-            slots: { customRender: 'claimed_by' },
-            align: 'center'
-        },
+      
         {
             title: 'Claimed Date',
             dataIndex: 'claimed_date',
