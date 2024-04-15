@@ -8,6 +8,7 @@ use App\Http\Controllers\Role\RoleController;
 use App\Http\Controllers\Application\ApplicationController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Message\MessageController;
 use App\Http\Controllers\OccupancyController;
 
 /*
@@ -76,5 +77,9 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
 
      Route::get('notifications', [NotificationController::class,'index']);
      Route::put('read/{id}', [NotificationController::class,'read']);
+
+     Route::get('online-users', [UserController::class,'getOnlineUsers']);
+     Route::get('messages', [MessageController::class,'index']);
+     Route::post('messages', [MessageController::class,'store']);
 
 });

@@ -233,4 +233,18 @@ class UserController extends Controller
         return response()->json($response);
     }
 
+    public function getOnlineUsers()
+    {
+        if(!auth()->check()) {
+            return response()->json(data: ['users' => []]);
+        }
+        if(auth()->user()->role_id == 3){
+        $users = User::with('unseenMessages')->where('role_id','!=', 3)->where('id', '!=', auth()->user()->id)->get();
+        }else{
+        $users = User::with('unseenMessages')->where('id', '!=', auth()->user()->id)->get();
+        }
+
+        return response()->json(data: ['users' => $users]);
+    }
+
 }
