@@ -17,9 +17,7 @@ class MessageController extends Controller
         $messagesQuery = Message::getMessagesQueryBetweenTwoUsers($request, auth()->user()->id, $request->receiver_id);
 
         if($request->earlier_date) {
-            $dateFormatted = Carbon::now()->format('Y-m-d H:i:s');
-
-            $messagesQuery->where("created_at", "<", $dateFormatted);
+             $messagesQuery->where("created_at", "<", $request->earlier_date);
         }
 
         // display top 10 messages for user
@@ -57,13 +55,28 @@ class MessageController extends Controller
 
         $updatedMessage = Message::with(['sender', 'receiver'])->find($message->id);
 
-        // fire the message sent event
-        MessageSent::dispatch($updatedMessage);
+        try {
+               // // fire the message sent event
+            MessageSent::dispatch($updatedMessage);
+          } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'No Internet Connection, Message saved!',
+                'data' => $updatedMessage
+            ], 201);
+          }
 
         return response()->json([
             'message' => 'Message Sent Successfully',
             'data' => $updatedMessage
         ], 220);
+    }
+    public function update(Request $request,$id)
+    {
+        $message = Message::whereIn('id', $request->ids)->update([
+            'seen' => 1
+        ]);
+
+        return response()->json(['status' => true, 'message' => $message],220);
     }
 
 

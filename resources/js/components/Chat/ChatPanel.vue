@@ -16,10 +16,11 @@
         @scroll="handleChatScroll" >
 
             <!-- <i class="fas fa-circle-notch fa-spin absolute left-36 top-16 text-3xl" v-if="loading"></i> -->
-            <LoadingOutlined v-if="loading" />
 
-            <ul v-else>
+            <ul>
+                <a-spin :spinning="loading">
                 <MessageLine v-for="userMessage in userMessages" :key="userMessage.id" :message="userMessage" :auth="auth" />
+                </a-spin>
             </ul>
 
         </section>
@@ -39,6 +40,7 @@
 import {ref, watch} from "vue";
 import axios from "../../axios"
 import _ from "lodash";
+import moment from "moment";
 
 import MessageLine from "./MessageLine.vue";
 
@@ -109,37 +111,38 @@ export default {
 
         const handleChatScroll = _.debounce((e) => {
                 // if the user scrolls to top
-                // if(e.target.scrollTop - 50 < scrollPoint.value) {
-                //     // showLoading();
 
-                //     const oldMessage = userMessages.value[0];
+                if(e.target.scrollTop - 50 == -50) {
+                    loading.value = true
 
-                //     window.axios.get(`/messages?receiver_id=${user.id}&earlier_date=${oldMessage.created_at}`)
-                //         .then(response => {
-                //             if(response && response.data.messages) {
-                //                 const filtered = [];
+                    const oldMessage = userMessages.value[0];
 
-                //                 response.data.messages.reverse().forEach(message => {
-                //                     if(!userMessages.value.find(m => m.id == message.id)) {
-                //                         filtered.push(message);
-                //                     }
-                //                 });
+                    axios.get(`backend/messages?receiver_id=${user.id}&earlier_date=${moment(oldMessage.created_at).format("YYYY-MM-DD H:m:s")}`)
+                        .then(response => {
+                            if(response && response.data.data) {
+                                const filtered = [];
 
-                //                 userMessages.value = [...filtered, ...userMessages.value];
-                //             }
+                                response.data.data.reverse().forEach(message => {
+                                    if(!userMessages.value.find(m => m.id == message.id)) {
+                                        filtered.push(message);
+                                    }
+                                });
+                                userMessages.value = [...filtered, ...userMessages.value];
 
-                //             setTimeout(() => {
-                //                 hideLoading();
-                //             }, 2000);
+                            }
 
-                //         }).catch(error => {
-                //             setTimeout(() => {
-                //                 hideLoading();
-                //             }, 2000);
+                            setTimeout(() => {
+                                loading.value = false
+                            }, 2000);
 
-                //         console.error(error.response);
-                //     });
-                // }
+                        }).catch(error => {
+                            setTimeout(() => {
+                                loading.value = false
+                            }, 2000);
+
+                        console.error(error.response);
+                    });
+                }
 
                 scrollPoint.value = e.target.scrollTop;
         }, 1000);

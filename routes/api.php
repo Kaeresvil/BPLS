@@ -80,6 +80,7 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
 
      Route::get('online-users', [UserController::class,'getOnlineUsers']);
      Route::get('messages', [MessageController::class,'index']);
+     Route::put("messages/{id}", [MessageController::class, "update"]);
      Route::post('messages', [MessageController::class,'store']);
 
 });

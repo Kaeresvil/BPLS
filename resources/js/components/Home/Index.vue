@@ -96,7 +96,6 @@ setup(props){
 
                     axios.get('backend/logout')
                     .then(response => {
-                        console.log('logout',response)
                         window.localStorage.removeItem("BPLS_TOKEN");
                         window.localStorage.removeItem("AUTH_ROLE");
                             window.location.href = "/"

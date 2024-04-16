@@ -137,7 +137,7 @@
                                 "
                                 @click="openMes = !openMes"
                             >
-                                See more
+                                <!-- See more -->
                             </div>
                             </div>
 
@@ -291,6 +291,9 @@ export default defineComponent({
     total: '',
     role:''
     })
+    const unseen = reactive({
+    ids: []
+    })
     const notifications = ref([])
 
     const onlineUsers = ref([]);
@@ -322,12 +325,18 @@ export default defineComponent({
         }
 
         const handleUserClick = (user) => {
+            unseen.ids = [];
+            user.unseen_messages.forEach( (messages) =>{
+                unseen.ids.push( messages.id)
+
+            })
+            sendMessageUpdateRequest(unseen, user.id)
             showChatPanel(user);
         }
         const showChatPanel = (user, emittedMessage = null) => {
 
             const isPanelOpened = chatPanels.panels.find(panel => panel.selectedUser.id === user.id);
-            console.log('isPanelOpened',isPanelOpened)
+
 
             if(!isPanelOpened) {
                 const userPanel = {
@@ -358,6 +367,13 @@ export default defineComponent({
             // removeChatPanelFromStorage(user);
         }
 
+        const sendMessageUpdateRequest = (unseenIds ,messageId) => {
+            axios.put(`/backend/messages/${messageId}`, unseenIds)
+                .then(response => {
+                        getOnlineUsers();
+                });
+        }
+
     const index = (payload = {page: 1, admin: form.role}) => {
           
                    axios.get('/backend/notifications', {params: {...payload}})
@@ -377,6 +393,8 @@ export default defineComponent({
 
     const pusherConfig = (auth_id) =>{
 
+        Pusher.logToConsole = true;
+
         const pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
                 cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
                 encrypted: true // optional, depending on your Pusher configuration
@@ -388,7 +406,6 @@ export default defineComponent({
             // Bind to events on the channel
             channel.bind('message.sent', (e) => {
                 const message = e.message;
-
                 showChatPanel(message.sender, message);
                 playChatTone();
 
@@ -406,7 +423,7 @@ export default defineComponent({
             });
 
 
-                // Pusher.logToConsole = true;
+
 
         // window.Pusher = Pusher;
 
@@ -492,7 +509,6 @@ e.preventDefault()
 
     axios.get('backend/logout')
     .then(response => {
-        console.log('logout',response)
         window.localStorage.removeItem("BPLS_TOKEN");
         window.localStorage.removeItem("AUTH_ROLE");
             window.location.href = "/"

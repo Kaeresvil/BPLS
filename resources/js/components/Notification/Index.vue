@@ -83,7 +83,6 @@ setup(){
             axios.get('/backend/notifications', {params: {...payload}})
                     .then(response => {
                         items.value = response.data.data;
-                        console.log('items', items.value)
                         // const unread = response.data.data.data.filter(
                         // (notif) => notif.is_read === 0
                         // );
