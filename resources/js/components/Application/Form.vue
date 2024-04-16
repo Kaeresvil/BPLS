@@ -864,7 +864,6 @@ setup() {
 
     const next = () => {
     current.value++;
-    console.log(steps[current.value].content)
     if (steps[current.value].content == 'upload_documents'){
       form.business_activity = businessActivityData.value
     }
@@ -1161,7 +1160,6 @@ setup() {
                         businessActivityData.value = form.business_activity.length != 0 ? [] : businessActivityData.value;
 
                         form.business_activity.forEach((activities) => {
-                          console.log('actt',activities.line_of_business)
    
                             businessActivityData.value.push({
                             key: $counter,
@@ -1179,7 +1177,6 @@ setup() {
                          
                           $counter++;
                         })
-                        console.log('form',res.data)
                         form.remarks = res.data.remarks
 
 
@@ -1211,7 +1208,6 @@ setup() {
     loading.value = true
    axios.post(`/backend/application`,form)
         .then(res => { 
-          console.log('applicant res', res)
           formData.append("id", res.data.data.id)
 
            axios.post("backend/documents",formData)
@@ -1279,7 +1275,6 @@ setup() {
    loading.value = true
    axios.post(`/backend/profile/${form.id}`,form)
         .then(res => { 
-            console.log('profile',res);
             form.first_name= res.data.data.first_name,
             form.last_name= res.data.data.last_name,
             form.middle_name= res.data.data.middle_name,

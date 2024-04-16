@@ -65,7 +65,100 @@
 
              </a-modal>
           <!-- <div style=" width: 50%;"> -->
-                    <BellFilled v-if="!$route.path.includes('signup')"  @click="openNotif = !openNotif" style="cursor: pointer;  font-size: 23px; margin-left: 40%; margin-top: 10px; color: #404040; " />
+                    <MessageFilled @click="openMes = !openMes, openNotif = false" style="cursor: pointer;  font-size: 23px; margin-left: 32%; margin-top: 10px; color: #404040; "/>
+                    <a-badge v-if="!$route.path.includes('signup')"
+                        style=" position: relative; top: 1px; left: -7px;cursor: pointer; "
+                        @click="openMes = !openMes"
+                        :count="messagesTotalCount"
+                        :number-style="{
+                            backgroundColor: 'rgb(255 41 6)',
+                            color: 'white',
+                            boxShadow: 'rgb(167 18 18) 0px 0px 0px 1px inset',
+                        }"
+                        />
+                    <div v-if="openMes" class="notificationCss">
+                            <div
+                                style="
+                                text-align: left;
+                                width: 100%;
+                                padding: 10px;
+                                padding-left: 18px;
+                                line-height: 35px;
+                                background: #2c7dc4;
+                                color: white;
+                                font-size: 17px;
+                                border-radius: 20px 20px 0 0;
+                                "
+                            >
+                                Messages
+
+                                
+                                 <div style="float: right; font-size: 14px">
+                                <!-- <span
+                                    style="cursor: pointer;font-size: 14px"
+                                    @click="filterNotif('read')"
+                                    :class="isRead === 'read' ? 'activeStatus' : ''"
+                                    >User</span
+                                > -->
+
+                                <span
+                                    style="font-size: 13px; margin-right: 15px;"
+    
+                                    >{{ authUser.role_id == 3? "BPLO's List":"User's List" }}</span
+                                >
+                                </div>
+
+                            </div>
+
+                            
+                            <div
+                                v-for="(user, index) in onlineUsers"
+                                :key="index"
+                                class="online-users"
+                                :class="user.unseen_messages.length > 0 ? 'messUnread' : ''"
+                                @click="handleUserClick(user)"
+                            >
+                                {{ user.full_name }}
+                            </div>
+                           
+                            <!-- <div style=" height: 80px; "> 
+                                <h6 style="margin: 10% 28%;">No Messages Available</h6>
+                            </div> -->
+                           
+                            <div
+                                class="notif"
+                                style="
+                                cursor: pointer;
+                                text-align: center;
+                                font-weight: bold;
+                                font-size: 14px;
+                                background: #d6d6d6;
+                                border-radius: 0 0 20px 20px;
+                                "
+                                @click="openMes = !openMes"
+                            >
+                                <!-- See more -->
+                            </div>
+                            </div>
+
+                            <audio style="display: none" id="chat-tone">
+                                    <source src='/assets/google_meet_chat_ping.mp3' type="audio/mpeg" />
+                                    Your browser does not support audio element
+                            </audio>
+
+                        <!-- CHAT PANEL -->
+                        <div class="fixed bottom-0 right-4 z-99999 w-full chat-panel-containers">    
+                            <div class=" chat-items">
+                                <ChatPanel v-for="panel in chatPanels.panels" :key="panel.selectedUser.id"
+               :user="panel.selectedUser" :emitted-message="panel.emittedMessage" :auth="authUser" @onCloseChat="hideChatPanel"/>
+                            </div>
+
+                        </div>
+                           <!-- CHAT PANEL -->
+
+
+                    <!-- Notification -->
+                    <BellFilled v-if="!$route.path.includes('signup')"  @click="openNotif = !openNotif, openMes = false" style="cursor: pointer;  font-size: 23px; margin-left: 3%; margin-top: 10px; color: #404040; " />
                     <a-badge v-if="!$route.path.includes('signup')"
                         style=" position: relative; top: 1px; left: -7px;cursor: pointer; "
                         @click="openNotif = !openNotif"
@@ -157,7 +250,6 @@
 
                 </div>
             <!-- <div class="linebottom"></div> -->
-
           
             <div>
                 <router-view></router-view>
@@ -170,21 +262,28 @@
 import { defineComponent, onMounted, reactive, ref } from "vue";
 import moment from "moment";
 import axios from "../../axios"
+import axios2 from "axios";
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
+import ChatPanel from "../Chat/ChatPanel.vue";
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
 export default defineComponent({
+    components: {ChatPanel},
   setup() {
     const router = useRouter();
     const route = useRoute();
     const authUser = ref()
     const loading = ref(false)
     const openNotif = ref(false)
+    const openMes = ref(false)
     const visibleModal = ref(false)
     const date = ref()
     const time = ref()
     const day = ref()
     const notificationCount = ref()
+    const messagesTotalCount = ref()
     const isRead = ref("All")
     const current = ref(['business_permit']);
     const form = reactive({
@@ -192,7 +291,88 @@ export default defineComponent({
     total: '',
     role:''
     })
+    const unseen = reactive({
+    ids: []
+    })
     const notifications = ref([])
+
+    const onlineUsers = ref([]);
+    const chatPanels = reactive({
+        panels: []
+    });
+
+    const getOnlineUsers = () => {
+        if(!route.path.includes('signup')){
+           axios.get('/backend/online-users')
+                    .then(response => {
+                        onlineUsers.value = response.data.users
+                        let count = 0;
+                onlineUsers.value.forEach((data) => {
+                    data.unseen_messages.length != 0 ? count++: '';
+                });
+                messagesTotalCount.value = count;
+                      
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                    });
+                }
+
+        }
+
+        const playChatTone = () => {
+            (document.getElementById("chat-tone")).play();
+        }
+
+        const handleUserClick = (user) => {
+            unseen.ids = [];
+            user.unseen_messages.forEach( (messages) =>{
+                unseen.ids.push( messages.id)
+
+            })
+            sendMessageUpdateRequest(unseen, user.id)
+            showChatPanel(user);
+        }
+        const showChatPanel = (user, emittedMessage = null) => {
+
+            const isPanelOpened = chatPanels.panels.find(panel => panel.selectedUser.id === user.id);
+
+
+            if(!isPanelOpened) {
+                const userPanel = {
+                    selectedUser: user,
+                    emittedMessage
+                };
+
+                chatPanels.panels.push(userPanel);
+                openMes.value = false
+                return true;
+                
+            }
+
+            // if the panel already opened
+            const index = chatPanels.panels.findIndex(panel => panel.selectedUser.id === user.id);
+
+            chatPanels.panels[index] = {...chatPanels.panels[index], emittedMessage};
+            openMes.value = false
+            return false;
+          
+        }
+
+        const hideChatPanel = (user) => {
+            const filtered = [...chatPanels.panels].filter(panel => panel.selectedUser.id !== user.id);
+
+            chatPanels.panels = [...filtered];
+
+            // removeChatPanelFromStorage(user);
+        }
+
+        const sendMessageUpdateRequest = (unseenIds ,messageId) => {
+            axios.put(`/backend/messages/${messageId}`, unseenIds)
+                .then(response => {
+                        getOnlineUsers();
+                });
+        }
 
     const index = (payload = {page: 1, admin: form.role}) => {
           
@@ -209,7 +389,61 @@ export default defineComponent({
                         console.log(error);
                     });
         }
+    getOnlineUsers();
 
+    const pusherConfig = (auth_id) =>{
+
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
+                cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+                encrypted: true // optional, depending on your Pusher configuration
+            });
+
+            // Subscribe to the private channel
+            const channel = pusher.subscribe(`private-messages.${auth_id}`);
+
+            // Bind to events on the channel
+            channel.bind('message.sent', (e) => {
+                const message = e.message;
+                showChatPanel(message.sender, message);
+                playChatTone();
+
+                // Handle incoming messages
+            });
+
+            // Handle subscription success
+            channel.bind('pusher:subscription_succeeded', () => {
+                console.log('Subscription succeeded');
+            });
+
+            // Handle subscription error
+            channel.bind('pusher:subscription_error', (status) => {
+                console.error('Subscription error:', status);
+            });
+
+
+
+
+        // window.Pusher = Pusher;
+
+        // window.Echo = new Echo({
+        //     broadcaster: 'pusher',
+        //     key: import.meta.env.VITE_PUSHER_APP_KEY,
+        //     cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+        //     forceTLS: true
+        // });
+
+        // window.Echo.private('messages.'+auth_id)
+        //             .listen('message.sent', e => {
+        //                 const message = e.message;
+
+        //                 console.log('message', message)
+
+        //                 // showChatPanel(message.sender, message);
+
+        //             });
+    }
     onMounted(() =>{
         current.value[0] = route.path
     if(!route.path.includes('signup')){
@@ -219,6 +453,7 @@ export default defineComponent({
                         authUser.value = response.data
                        form.role = authUser.value.role
                        index();
+                       pusherConfig(authUser.value.id);
                     })
         }
         setInterval(() => {
@@ -274,7 +509,6 @@ e.preventDefault()
 
     axios.get('backend/logout')
     .then(response => {
-        console.log('logout',response)
         window.localStorage.removeItem("BPLS_TOKEN");
         window.localStorage.removeItem("AUTH_ROLE");
             window.location.href = "/"
@@ -297,9 +531,16 @@ e.preventDefault()
         current,
         notificationCount,
         openNotif,
+        openMes,
         isRead,
         visibleModal,
         notifications,
+
+        onlineUsers,
+        chatPanels,
+        messagesTotalCount,
+        handleUserClick,
+        hideChatPanel,
 
         logout,
         appointment,
@@ -360,6 +601,17 @@ e.preventDefault()
   line-height: normal;
   border-bottom: 1px solid #d2d6de;
 }
+.online-users {
+  text-align: left;
+  cursor: pointer;
+  padding: 15px;
+  line-height: normal;
+  border-bottom: 0.5px solid #d2d6de;
+  /* overflow-y: scroll ; */
+}
+.online-users:hover {
+  background: #b2cfe0;
+}
 .notif:hover {
   background: #b2cfe0;
 }
@@ -369,8 +621,32 @@ e.preventDefault()
 .notifUnread:hover {
   background: #b2cfe0 !important;
 }
+.messUnread {
+  background: #a0c4da !important;
+  font-weight: bold;
+}
+.messUnread:hover {
+  background: #a7bdca !important;
+}
 .activeStatus {
   border-bottom: 1px solid white;
 }
+
+.chat-panel-containers{
+   position: fixed;
+   right: 1rem;
+   z-index: 99999;
+
+
+}
+.chat-items{
+    position: relative;
+    /* overflow-x: scroll; */
+    display: flex;
+    flex-direction: row-reverse;
+    margin-left: 1.5rem; /* Adjust as needed */
+    margin-bottom: 0.5rem;
+}
+
 
 </style>

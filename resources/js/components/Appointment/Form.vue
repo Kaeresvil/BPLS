@@ -90,7 +90,6 @@ setup() {
     const onPanelChange = value => {
         date.value = value;
         form.date =  moment(value.$d).format("YYYY-MM-DD")
-        console.log('triger')
         loading.value = true;
         axios.get('/backend/schedule/available', {params: {date: form.date}})
                                     .then(response => {

@@ -21,6 +21,11 @@ import {
     PlusOutlined,
     EyeFilled,
     BellFilled,
+    MessageFilled,
+    SendOutlined,
+    CloseOutlined,
+    LoadingOutlined,
+    ClockCircleFilled
   } from "@ant-design/icons-vue";
   
 
@@ -41,4 +46,9 @@ app.component("ProfileOutlined", ProfileOutlined);
 app.component("PlusOutlined", PlusOutlined);
 app.component("EyeFilled", EyeFilled);
 app.component("BellFilled", BellFilled);
+app.component("MessageFilled", MessageFilled);
+app.component("SendOutlined", SendOutlined);
+app.component("CloseOutlined", CloseOutlined);
+app.component("LoadingOutlined", LoadingOutlined);
+app.component("ClockCircleFilled", ClockCircleFilled);
 app.mount('#app');
