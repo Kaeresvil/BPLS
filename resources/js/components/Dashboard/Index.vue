@@ -65,7 +65,7 @@
 
              </a-modal>
           <!-- <div style=" width: 50%;"> -->
-                    <MessageFilled @click="openMes = !openMes, openNotif = false" style="cursor: pointer;  font-size: 23px; margin-left: 32%; margin-top: 10px; color: #404040; "/>
+                    <MessageFilled v-if="!$route.path.includes('signup')" @click="openMes = !openMes, openNotif = false" style="cursor: pointer;  font-size: 23px; margin-left: 32%; margin-top: 10px; color: #404040; "/>
                     <a-badge v-if="!$route.path.includes('signup')"
                         style=" position: relative; top: 1px; left: -7px;cursor: pointer; "
                         @click="openMes = !openMes"
