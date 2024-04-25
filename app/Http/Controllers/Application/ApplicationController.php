@@ -12,11 +12,16 @@ use App\Models\OwnerInformation;
 use App\Models\Document;
 use App\Models\Appointment;
 use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use App\Mail\ApproveEmail;
+use App\Mail\ReturnEmail;
 
 class ApplicationController extends Controller
 {
@@ -25,9 +30,9 @@ class ApplicationController extends Controller
     public function generateRefNumber()
     {
 
-        $count = Application::all()->count();
+        $count = Application::latest('created_at')->first();
 
-        $count = $count + 1;
+        $count = $count->id + 1;
 
         if ($count < 10) {
             $ref_no = "BPLS-0000" . ($count);
@@ -366,29 +371,52 @@ class ApplicationController extends Controller
 
     public function approve(Request $request, $id)
     {
+    DB::beginTransaction();
+    try {
         $post = Application::find($id);
         $post->status = 'APPROVED';
         $post->remarks = $request->remarks;
         $post->update();
 
+        $user = User::find($post->applicant_id);
+        Mail::to($user->email)->send(new ApproveEmail($post->ref_no));
         $this->ApproveAndReeturnNotification($post, $id);
+
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return $e->getMessage();
+    }
         return response()->json([
             'message' => 'Application Approved Successfully',
             'data' => $post
         ], 200);
     }
+
     public function return(Request $request, $id)
     {
+     DB::beginTransaction();
+    try {
         Log::info($request->remarks);
         $post = Application::find($id);
         $post->status = 'RETURNED';
         $post->remarks = $request->remarks;
         $post->update();
         $this->ApproveAndReeturnNotification($post, $id);
-        return response()->json([
-            'message' => 'Application Returned Successfully',
-            'data' => $post
-        ], 200);
+        $user = User::find($post->applicant_id);
+        Mail::to($user->email)->send(new ReturnEmail($post->ref_no));
+
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return $e->getMessage();
+    }
+
+    return response()->json([
+        'message' => 'Application Returned Successfully',
+        'data' => $post
+    ], 200);
+
     }
     public function claimed(Request $request, $id)
     {
@@ -430,6 +458,7 @@ class ApplicationController extends Controller
         Lessor::where('application_id', $id)->delete();
         OwnerInformation::where('application_id', $id)->delete();
         Appointment::where('application_id', $id)->delete();
+        Notification::where('application_id', $id)->delete();
 
         $documents = Document::where('application_id', '=', $id)->get();
 

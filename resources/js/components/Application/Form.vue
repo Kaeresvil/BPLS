@@ -59,15 +59,15 @@
         <a-textarea v-model:value="form.remarks" placeholder="Remarks" :rows="4" />
 
 
-                <a-space v-if="form.status != 'APPROVED' && form.status != 'CLAIMED'" style="margin-left: 300px; margin-top: 15px;">
-                  <a-button class="buttondelete" key="back" @click="returnApplication()">
+                <a-space v-if="form.status != 'APPROVED' && form.status != 'CLAIMED'" style="margin-left: 290px; margin-top: 15px;">
+                  <a-button class="buttondelete" key="back" @click="returnApplication()" :loading="loading">
                     Return
                   </a-button>
                   <a-button
                     type="primary"
                     @click="approveApplication()"
                     class="buttoncreate"
-                    :loading="false"
+                    :loading="loading"
                   >
                     Approve
                   </a-button>
@@ -1313,9 +1313,10 @@ setup() {
     };
     const approveApplication = () => {
 
-
+      loading.value = true
    axios.put(`/backend/application/approve/${route.params.id}`,form)
         .then(res => { 
+          loading.value = false
           router.push('/business-application')
         })
         .catch(function (error) {
@@ -1324,9 +1325,10 @@ setup() {
      
     };
     const returnApplication = () => {
-
+      loading.value = true
    axios.put(`/backend/application/return/${route.params.id}`,form)
-        .then(res => { 
+        .then(res => {
+          loading.value = false 
           router.push('/business-application')
         })
         .catch(function (error) {
