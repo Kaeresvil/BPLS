@@ -31,9 +31,9 @@
           align-items: center;
           "
         >
-          <h4 style="color:rgb(22, 22, 22); font-size: 20px; font-weight: bold; padding-left: 47px;
+          <h4 style="color:rgb(22, 22, 22); font-size: 20px; font-weight: bold; padding-left: 60px;
           padding-bottom: 20px;">
-            Sign in to start your session
+            Forgot your password?
           </h4>
           <div>
             <span
@@ -43,6 +43,11 @@
             >
               {{ error[0] }}
             </span>
+          </div>
+          <div>
+            <p style="color: black; font-size: small ">
+                Please enter the email address you'd like your password reset information sent to
+            </p>
           </div>
           <a-form
             id="components-form-demo-normal-login"
@@ -66,35 +71,17 @@
             </a-form-item>
   
             <a-form-item>
-              <a-input
-                type="password"
-                placeholder="Password"
-                autocomplete="off"
-                v-model:value="userState.password"
-                required
-              >
-                <template #prefix>
-                  <LockOutlined style="color: rgba(0, 0, 0, 0.25)" />
-                </template>
-              </a-input>
-            </a-form-item>
-  
-            <a-form-item>
               <a-button
                 class="login-form-button"
                 html-type="submit"
-               
+                :loading="loading"
               >
-                Sign In
+               Request password reset
               </a-button>
 
               <div style="text-align: center; margin-top: 10px">
-                Don't have an account ?
-                <router-link to="/signup" style="color: #24792f"
-                  >SignUp</router-link
-                ><br>
-                <router-link to="/forgot" style="color: #24792f"
-                  >Forgot Password?</router-link
+                <router-link to="/" style="color: #24792f"
+                  >Back to Sign In</router-link
                 >
               </div>
             </a-form-item>
@@ -123,40 +110,33 @@
       const router = useRouter();
       const api = 'http://127.0.0.1:8000/api/';
       const errors = ref([]);
+      const loading = ref(false);
   
       const userState: UnwrapRef<FormState> = reactive({
-        email: "",
-        password: "",
+        email: ""
       });
   
       const handleFinish = async (values: FormState) => {
 
         // window.localStorage.setItem("SIGNLE_SIGNON", "");
+        loading.value = true
         await axios
-          .post(`${api}login`, userState)
+          .post(`${api}forgot`, userState)
           .then((res) => {
-            console.log('res lo', res.data)
-
-            window.localStorage.setItem("BPLS_TOKEN", res.data.data.token);
-            window.localStorage.setItem("AUTH_ROLE", res.data.data.user.role.name);
-  
-            Axios.defaults.headers[
-              "Authorization"
-            ] = `Bearer ${window.localStorage.getItem("BPLS_TOKEN")}`;
-
             Swal.fire({
-                icon: "success",
-                title: res.data.message,
-                showConfirmButton: true,
-                timer: 2500,
-                timerProgressBar: true,
-              });
-
-            router.push("/home");
+            position: "top-end",
+            icon: "success",
+            text: "New password has been sent to your email.",
+            showConfirmButton: false,
+            timer: 3000,
+            width: "330px"
+          });
+            loading.value = false
+            router.push("/");
           })
           .catch((err) => {
             errors.value = err.response.data.errors;
-
+            loading.value = false
           });
       };
   
@@ -168,6 +148,7 @@
       return {
         userState,
         errors,
+        loading,
         handleFinish,
         handleFinishFailed,
       };

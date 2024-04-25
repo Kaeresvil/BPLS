@@ -13,7 +13,8 @@
              
                 <FormOutlined style="font-size: 100px;" />
             <div class="card-body">
-                <h5 class="card-title">Business Application</h5>
+                <h5 v-if="isAdmin == 'Applicant' && !loading" class="card-title">Business Application</h5>
+                <h5 v-else class="card-title">Review Business Application</h5>
 
                 </div>
           </div>
@@ -30,7 +31,8 @@
             <FileDoneOutlined style="font-size: 100px;" />
 
             <div class="card-body">
-            <h5 class="card-title">Appointment</h5>
+            <h5 v-if="isAdmin == 'Applicant' && !loading" class="card-title">Appointment</h5>
+            <h5 v-else class="card-title">Review Appointment</h5>
 
             </div>
             </div>
@@ -72,13 +74,12 @@ setup(props){
     onMounted(() =>{
 
         console.log('mounted')
-
-        // axios.get('backend/auth_user')
-        //             .then(response => {
-        //                 console.log(response.data)
-        //                 loading.value = true
-        //                 authUser.value = response.data
-        //             })
+        loading.value = true
+        axios.get('backend/auth_user')
+                    .then(response => {
+                        loading.value = false
+                        isAdmin.value = response.data.role 
+                    })
                     
 
     })

@@ -2,6 +2,7 @@ import { createWebHistory, createRouter } from "vue-router";
 
 import Login from '../pages/Login.vue';
 import Signup from '../pages/Signup.vue';
+import  Forgot from '../pages/Forgot.vue';
 import Dashboard from '../components/Dashboard/Index.vue';
 
 const role1 = ['Admin', 'Staff', 'Applicant'];
@@ -17,6 +18,13 @@ const routes = [
     meta: { requiresAuth: false, roles: role1  }
   },
 
+  {
+    name: 'forgot',
+    path: '/forgot',
+    component: Forgot,
+    meta: { requiresAuth: true, roles: role1  }
+},
+
 
   {
     name: 'dashboard',
@@ -29,7 +37,6 @@ const routes = [
             component: Signup,
             meta: { requiresAuth: true, roles: role1  }
         },
-
       {
         name: 'home',
         path: '/home',
@@ -139,6 +146,8 @@ router.beforeEach((to, from, next) => {
 
 
     if ( to.name == 'signup' )
+        next();
+    else if ( to.name == 'forgot' )
         next();
     else if (to.name !== 'login' && !window.localStorage.getItem("BPLS_TOKEN"))
         next({ name: "login" });

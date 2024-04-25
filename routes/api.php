@@ -28,6 +28,7 @@ use App\Http\Controllers\OccupancyController;
 
 
 Route::post('login', [AuthController::class, 'login']);
+Route::post('forgot', [AuthController::class, 'forgot']);
 Route::post('register/applicant', [UserController::class, 'register']);
 
 

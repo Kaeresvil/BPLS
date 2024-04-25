@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
+use App\Mail\DeactivatedEmail;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -203,6 +204,9 @@ class UserController extends Controller
 
         if($user->is_verified == 1 && $user->wasChanged('is_verified')){
         Mail::to($user->email)->send(new VerificationEmail($user->email));
+        }
+        if($user->is_verified == 0 ){
+        Mail::to($user->email)->send(new DeactivatedEmail($user->email));
         }
 
 

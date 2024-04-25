@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Appointment;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\Application;
+use App\Models\User;
 use App\Models\Occupancy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +14,9 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use App\Mail\AppointmentEmail;
 
 class AppointmentController extends Controller
 {
@@ -62,6 +67,8 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
+    DB::beginTransaction();
+    try {
         $exist_appointment = Appointment::where('application_id', $request->application_id)->where('is_claimed', 0)->first();
         if($exist_appointment){
             throw ValidationException::withMessages([
@@ -78,6 +85,15 @@ class AppointmentController extends Controller
 
        $appointment->save();
 
+       $permit = Application::find($request->application_id);
+       $user = User::find($permit->applicant_id);
+       Mail::to($user->email)->send(new AppointmentEmail($permit->ref_no, Carbon::parse($request->date)->format('M. d Y'), false));
+
+       DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return $e->getMessage();
+    }
        return response()->json([
         'message' => 'Appointment Schedule Submitted Successfully',
         'data' => $appointment
@@ -86,6 +102,8 @@ class AppointmentController extends Controller
 
     public function update(Request $request, $id)
     {
+    DB::beginTransaction();
+    try {
         $appointment = Appointment::find($id);
         if($appointment->is_claimed == 1){
             throw ValidationException::withMessages([
@@ -94,6 +112,16 @@ class AppointmentController extends Controller
         }
         $appointment->date = Carbon::parse($request->date)->format('Y-m-d');
         $appointment->update();
+
+        $permit = Application::find($appointment->application_id);
+        $user = User::find($permit->applicant_id);
+        Mail::to($user->email)->send(new AppointmentEmail($permit->ref_no, Carbon::parse($request->date)->format('M. d Y'), true));
+
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return $e->getMessage();
+    }
         return response()->json([
             'message' => 'Appointment Schedule Updated Successfully',
             'data' => $appointment
