@@ -55,6 +55,7 @@
                     </a-button>
 
                     <a-button
+                    v-if="!isApplicant"
                     class="buttondelete"
                     size="small"
                     @click="deleteRecord(record)"
@@ -119,6 +120,7 @@ components:{},
 setup(){
     const application = ref([])
     const loading = ref(true)
+    const isApplicant = ref(false)
     const router = useRouter()
     const form = reactive({
       page: 1,
@@ -176,7 +178,12 @@ setup(){
                    axios.get('/backend/application', {params: {...payload}})
                     .then(response => {
                         application.value = response.data.data;
-                        loading.value = false;
+
+                        axios.get('backend/auth_user')
+                        .then(response => {
+                        isApplicant.value = response.data.role == 'Applicant' ? true:false
+                        loading.value = false
+            })
                     })
                     .catch(function(error) {
                         console.log(error);
@@ -277,7 +284,8 @@ setup(){
         form,
         application,
         loading,
-        columns
+        columns,
+        isApplicant
     }
 }
 })

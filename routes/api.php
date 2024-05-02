@@ -10,6 +10,7 @@ use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Message\MessageController;
 use App\Http\Controllers\OccupancyController;
+use App\Http\Controllers\AssessmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,5 +84,8 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
      Route::get('messages', [MessageController::class,'index']);
      Route::put("messages/{id}", [MessageController::class, "update"]);
      Route::post('messages', [MessageController::class,'store']);
+
+     Route::post('assessment', [AssessmentController::class,'store']);
+     Route::get('assessment/{id}', [AssessmentController::class,'show']);
 
 });

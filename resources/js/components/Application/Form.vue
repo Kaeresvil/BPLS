@@ -48,18 +48,26 @@
         :data="form"
         ></Summary>
 
-        <a-modal v-model:visible="visibleSummaryForm" title="Uploaded Documents" :footer="null">
-          <div>
+        <a-modal v-model:visible="visibleAssessment" title="Assessment of Application Fees" :footer="null" style="width: 56%;">
+          <Assessment
+        :data="form"
+        :isApplicant="isApplicant"
+        ></Assessment>
+
+          </a-modal>
+
+        <a-modal style="width: 55%;" v-model:visible="visibleSummaryForm" title="Uploaded Documents" :footer="null">
+          <div style="margin: auto;">
 
             <a-image-preview-group v-for="item in form.files" :key="item">
-          <a-image style="margin-left: 2px;" :width="235"  :height="200" :src="'/storage/' + item.file_name" />
+          <a-image style="margin-left: 2px;" :width="309"  :height="200" :src="'/storage/' + item.file_name" />
         </a-image-preview-group>
         </div>
 
         <a-textarea v-model:value="form.remarks" placeholder="Remarks" :rows="4" />
 
 
-                <a-space v-if="form.status != 'APPROVED' && form.status != 'CLAIMED'" style="margin-left: 290px; margin-top: 15px;">
+                <a-space v-if="form.status != 'APPROVED' && form.status != 'CLAIMED'" style=" margin-top: 15px;">
                   <a-button class="buttondelete" key="back" @click="returnApplication()" :loading="loading">
                     Return
                   </a-button>
@@ -88,6 +96,14 @@
                     :loading="false"
                   >
                     Documents
+            </a-button>
+          <a-button
+            style="margin-right: 5px"
+                    @click="visibleAssessment = true"
+                    class="buttoncreate"
+                    :loading="false"
+                  >
+                    Assessment
             </a-button>
           <a-button
           v-if="form.status == 'APPROVED' && !isApplicant"
@@ -687,46 +703,43 @@
     <div v-if="steps[current].content == 'upload_documents'" class="steps-content">
         <a-row>
             <h3 style="margin-bottom: 20px; margin-right: 8px ;">4. UPLOAD DOCUMENTS</h3> 
-              <a-button class="buttoncreate" type="primary"  @click="visible = true">
+              <!-- <a-button class="buttoncreate" type="primary"  @click="visible = true">
                       Add
-              </a-button>
+              </a-button> -->
         </a-row>
 
          
-          <b>Instruction: </b>Please upload only documents listed below; <br>
-           1. Single Proprietorship (One Owner) - DTI only.<br>
-           2. Partnership (2-3 members with articles of partnership) - Security and Exchange Commision.<br>
-           3. Corporation (could be 1 or sole CEO have 4 members and up with articles of incorporation)  - Securities and Exchange Commision.<br>
-           4. Cooperative (many members with articles of cooperation) - Cooperative Development Authority. 
-          
+     
 
 
-              <a-table row-key="id" size="small" :columns="columns" :data-source="form.files" bordered style="overflow-x: auto;overflow-y: auto;" >
+              <a-table row-key="id" size="small" :columns="columns" :data-source="form.type_of_application == 'New' ?newDocument:renewDocument" :pagination="pagination" bordered style="overflow-x: auto;overflow-y: auto;" >
                 <template v-slot:action="{ record }">
                   <a-space>
-                      <a-button class="buttondelete" type="danger" size="small" @click="remove(record)" > Remove</a-button>
+                      <!-- <a-button class="buttondelete" type="danger" size="small" @click="remove(record)" > Remove</a-button> -->
+                       <!-- <a-button size="small" class="buttoncreate" type="primary"  @click="visible = true">
+                     Upload 
+              </a-button> -->
+
+              <a-input
+                      type="file"
+                      @change="handlefile($event, record)"
+                      ref="fileInput"
+                      :accept="acceptedFiles"
+                    />
+
                   </a-space>
                 </template>
                 <template v-slot:file="{ record }">
                   
-                  <a-image v-if="!record.name" style="margin-left: 2px;" :width="120"  :height="120" :src="'/storage/' + record.file_name" />
-                  <a-space v-if="record.name" >
-                       {{ record.name }}
-                  </a-space>
-                </template>
-                <template v-slot:status="{ record }">
-                  
-                  <a-space v-if="record.name" >
-                      NEW
-                  </a-space>
-                  <a-space v-if="!record.name" >
-                      UPLOADED
+                  <a-image v-if="record.file_path &&  record.file_name == ''" style="margin-left: 2px;" :width="120"  :height="120" :src="'/storage/' + record.file_path" />
+                  <a-space v-else >
+                       {{ record.file_name }}
                   </a-space>
                 </template>
             </a-table>
 
 
-            <a-modal v-model:visible="visible" title="Upload Valid ID" :footer="null">
+            <a-modal v-model:visible="visible" title="Upload Document" :footer="null">
     
                 <a-form
                   :labelCol="{ span: 4 }"
@@ -842,11 +855,13 @@ import { Modal } from 'ant-design-vue';
 
 import Swal from "sweetalert2";
 import Summary from "./Summary.vue"
+import Assessment from "./Assessment.vue"
 
 
 export default defineComponent({
   components: {
-    Summary
+    Summary,
+    Assessment
   },
 setup() {
   const router = useRouter();
@@ -856,6 +871,7 @@ setup() {
   const visible = ref(false)
   const isApplicant = ref(true)
   const visibleSummaryForm = ref(false)
+  const visibleAssessment = ref(false)
   const dateFormat = "YYYY-MM-DD";
       const acceptedFiles = ref(['.png','.jpeg','.jpg'])
 //   const api = 'http://127.0.0.1:8000/api/';
@@ -866,6 +882,23 @@ setup() {
     current.value++;
     if (steps[current.value].content == 'upload_documents'){
       form.business_activity = businessActivityData.value
+    }
+    if (steps[current.value].content == 'summary' && !route.path.includes("edit")){
+      const isEmptyFile = form.type_of_application == 'New'? newDocument.value.some(item => item.file.length === 0):renewDocument.value.some(item => item.file.length === 0);
+          if (isEmptyFile) {
+            current.value--;
+            Modal.error({
+            title: () => 'Error: UPLOAD DOCUMENTS',
+            content: () => 'Please upload all requirements listed on the table.',
+            okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', // Change the color of the OK button here
+            borderColor: '#24792f', // Change the border color of the OK button here
+            color: 'white', // Change the text color of the OK button here
+                },
+              },
+            }); 
+          }
     }
     if (steps[current.value].content == 'other-info'){
       if(form.type_of_application == '' || form.mode_of_payment == '' || form.date_of_application == ''){
@@ -939,17 +972,13 @@ setup() {
 
     const columns = [
       {
-          title: 'File',
-          dataIndex: 'name',
-          slots: { customRender: "file" },
-          width: '35%',
-          align: 'center'
+          title: 'Requirement',
+          dataIndex: 'document',
       },
       {
-          title: 'Status',
-          dataIndex: 'name',
-          slots: { customRender: "status" },
-          align: 'center'
+          title: 'File',
+          dataIndex: 'file_name',
+          slots: { customRender: "file" },
       },
       {
         title: "Action",
@@ -1037,6 +1066,228 @@ setup() {
           non_essential: "",
           remarks: "No Event"
 
+        },
+      ]);
+    const newDocument =
+      ref([
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 1,
+          document: "Barangay Business Clearance (Original)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 2,
+          document: "Community Tax Certificate (Photo Copy) "
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 3, 
+          document: "DTI/SEC Registration (Photo Copy)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 4,
+          document: "Zoning Clearance (Photo Copy)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 5,
+          document: "Occupancy Permit (if required by local law)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 6,
+          document: "Sanitary Permit"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 7,
+          document: "MENRO Clearance"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 8,
+          document: "BFP Clearance"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 9,
+          document: "2x2 Picture"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 10,
+          document: "Contract of Lease (if rented)-Photo Copy"
+        },
+      ]);
+    const renewDocument =
+      ref([
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 1,
+          document: "Barangay Business Clearance (Original)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 2,
+          document: "Community Tax Certificate (Photo Copy) "
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 3,
+          document: "DTI/SEC Registration (Photo Copy)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 4,
+          document: "Sanitary Permit"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 5,
+          document: "MENRO Clearance"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 6,
+          document: "BFP Clearance"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 7,
+          document: "2x2 Picture"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 8,
+          document: "Contract of Lease (if needed)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 9,
+          document: "DOT Accreditation (photo copy) (for Hotels/Resorts/Car/Tour Service)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 10,
+          document: "BAI Registration (photo copy) (for Farm and Agicultural Supply)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 11,
+          document: "DOE Certification/Clearance (photo copy) (for Gasoline Station, LPG Retailing)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 12,
+          document: "BIR Registration/Certification (photo copy)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 13,
+          document: "SSS Certification (photo copy)"
+        },
+        {
+          id: "",
+          application_id: "",
+          file: [],
+          file_name: "",
+          file_path:"",
+          key: 14,
+          document: "Pag-ibig Certification (photo copy)"
         },
       ]);
 
@@ -1154,7 +1405,23 @@ setup() {
                         form.lessors_tel_no = res.data.lessor.lessors_tel_no
                         form.monthly_rental = res.data.lessor.monthly_rental
                         form.status = res.data.status
-                
+
+                        let c = 0;
+                        res.data.documents.forEach((document) => {
+                          // newDocument.value[c].file_name =  document.file_name
+                          if(form.type_of_application == 'New'){
+                          newDocument.value[c].file_path =  document.file_name
+                          newDocument.value[c].application_id = document.application_id
+                          newDocument.value[c].id = document.id
+                          }else{
+                          renewDocument.value[c].file_path =  document.file_name
+                          renewDocument.value[c].application_id = document.application_id
+                          renewDocument.value[c].id = document.id
+                          }
+                          c++
+                        })
+
+
 
                         let $counter = 1;
                         businessActivityData.value = form.business_activity.length != 0 ? [] : businessActivityData.value;
@@ -1200,10 +1467,25 @@ setup() {
     if(!route.path.includes("edit")){
     const formData = new FormData();
 
-        for (var i = 0; i < form.files.length; i++) {
-            let file = form.files[i];
-            formData.append("files[" + i + "]", file);
-          }
+   
+
+      if(form.type_of_application == 'New'){
+            for (var i = 0; i < newDocument.value.length; i++) {
+                let file = newDocument.value[i].file;
+                formData.append("files[" + i + "]", file);
+                formData.append("document[" + i + "]", newDocument.value[i].document);
+                formData.append("key[" + i + "]", newDocument.value[i].key);
+              }
+
+        }else{
+              for (var i = 0; i < renewDocument.value.length; i++) {
+                let file = renewDocument.value[i].file;
+                formData.append("files[" + i + "]", file);
+                formData.append("document[" + i + "]", renewDocument.value[i].document);
+                formData.append("key[" + i + "]", renewDocument.value[i].key);
+              }
+        }
+
    
     loading.value = true
    axios.post(`/backend/application`,form)
@@ -1227,19 +1509,41 @@ setup() {
         loading.value = true
         const formData = new FormData();
         formData.append("id", route.params.id);
-          for (var i = 0; i < form.files_remove.length; i++) {
-            formData.append("remove[" + i + "]", form.files_remove[i]);
-          }
-          for (var i = 0; i < form.files.length; i++) {
-              if(form.files[i].name != null){
-                let file = form.files[i];
-                formData.append("files[" + i + "]", file);
-              }else{
-                formData.append("f_id[" + i + "]", form.files[i].id);
+
+        const isNotEmptyFile = form.type_of_application == 'New'? newDocument.value.some(item => item.file.length !== 0):renewDocument.value.some(item => item.file.length !== 0);
+        console.log('some is empty')
+        console.log(isNotEmptyFile)
+          if (isNotEmptyFile) {
+      if(form.type_of_application == 'New'){
+        let c = 0
+            for (var i = 0; i < newDocument.value.length; i++) {
+              if(newDocument.value[i].file.length == undefined){
+                let file = newDocument.value[i].file;
+                formData.append("files[" + c + "]", file);
+                formData.append("f_id[" + c + "]", newDocument.value[i].id);
+                formData.append("remove[" + c + "]", newDocument.value[i].file_path);
               }
-            }
+              }
+
+        }else{
+            let rc = 0
+              for (var i = 0; i < renewDocument.value.length; i++) {
+                if(renewDocument.value[i].file.length == undefined){
+                let file = renewDocument.value[i].file;
+                formData.append("files[" + rc + "]", file);
+                formData.append("f_id[" + rc + "]", renewDocument.value[i].id);
+                formData.append("remove[" + rc + "]", renewDocument.value[i].file_path);
+                rc++
+                }
+              
+              }
+        }
+
+          }
+
         axios.put(`/backend/application/update/${route.params.id}`,form)
-        .then(response => { 
+        .then(response => {
+          if (isNotEmptyFile) { 
           axios.post("backend/documents/update",formData)
                 .then(response => { 
                   router.push('/business-application')
@@ -1247,8 +1551,10 @@ setup() {
                 .catch(function (error) {
                     loading.value = false
                 });
+              }else{
             loading.value = false
-            // router.push('/business-application')
+            router.push('/business-application')
+            }
 
                  
         })
@@ -1303,11 +1609,14 @@ setup() {
       });
     };
 
-    const handlefile = (e) => {
+    const handlefile = (e, record) => {
 
-      form.file =  e.target.files[0]
-      const input = ref(fileInput);
-      input.value = ''; // Clear the selected file
+      record.file =  e.target.files[0]
+      record.file_name =  e.target.files[0].name
+      // const input = ref(fileInput);
+      // input.value = ''; // Clear the selected file
+
+
      
 
     };
@@ -1373,10 +1682,19 @@ setup() {
     businessActivityData,
     visible,
     visibleSummaryForm,
+    visibleAssessment,
     acceptedFiles,
     isApplicant,
     dateFormat,
 
+    newDocument,
+    renewDocument,
+    pagination: {
+        pageSize: 20, 
+        showSizeChanger: true, 
+        pageSizeOptions: ['20', '40'] 
+      }
+,
     handlefile,
     addFile,
     columns,
