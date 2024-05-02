@@ -12,6 +12,7 @@ use App\Models\OwnerInformation;
 use App\Models\Document;
 use App\Models\Appointment;
 use App\Models\Notification;
+use App\Models\Assessment;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -183,7 +184,7 @@ class ApplicationController extends Controller
        return response()->json([
         'message' => 'Applicattion Updated Successfully',
         'data' => $application
-    ], 220);
+    ], 200);
     }
 
     public function updateBusinessActivity($activities, $id)
@@ -311,6 +312,7 @@ class ApplicationController extends Controller
     {
 
         if (isset($request['files'])) {
+            $c = 0;
             foreach ($request['files'] as $key => $value) {
                 $fileName = time() . '_' . $value->getClientOriginalName();
                 $folderName = 'public';
@@ -319,9 +321,11 @@ class ApplicationController extends Controller
                 Document::create([
                     'application_id' => $request['id'],
                     'file_name' => $fileName,
+                    'document' => $request['document'][$c],
+                    'key' => $request['key'][$c],
                     'file_path' =>  $path
                 ]);
-
+                $c++;
             }
         }
        
@@ -334,31 +338,25 @@ class ApplicationController extends Controller
     public function updateDocuments(Request $request)
     {
 
-       if (isset($request['f_id'])) {
-        $deleted = Document::whereNotIn('id', $request['f_id'])->where('application_id', '=', $request['id'])->delete();
-        log::info($deleted);
-       }else{
-        Document::where('application_id', '=', $request['id'])->delete();
-       }
 
        if (isset($request['remove'])) {
         foreach ($request['remove'] as $path) {
-            Storage::disk('local')->delete($path);
+            Storage::disk('local')->delete("public/".$path);
         }
        }
 
         if (isset($request['files'])) {
+            $c = 0;
             foreach ($request['files'] as $key => $value) {
                 $fileName = time() . '_' . $value->getClientOriginalName();
                 $folderName = 'public';
                 $path = Storage::disk('local')->putFileAs($folderName, $value, $fileName);
 
-                Document::create([
-                    'application_id' => $request['id'],
+                Document::where('id', $request['f_id'][$c])->update([
                     'file_name' => $fileName,
                     'file_path' =>  $path
                 ]);
-
+                $c++;
             }
         }
        
@@ -373,6 +371,14 @@ class ApplicationController extends Controller
     {
     DB::beginTransaction();
     try {
+        $assesment = Assessment::where('application_id',$id)->first();
+        if(!$assesment){
+            return response()->json([
+                'errors' => ['Assessment not found, please set assessment to approve.'],
+                'data' => []
+            ], 422);
+
+        }
         $post = Application::find($id);
         $post->status = 'APPROVED';
         $post->remarks = $request->remarks;
