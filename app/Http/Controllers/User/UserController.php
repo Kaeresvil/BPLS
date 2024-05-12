@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UsersId;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -143,6 +144,16 @@ class UserController extends Controller
                 $user->save();
                 $data = $user;
                 $message = "Register Account Successfully";
+
+                $notification = new Notification();
+
+                $description =  "New user has been created, needs your verfication.";
+                $notification->application_id = $data->id;
+                $notification->description = $description;
+                $notification->is_read = 0;
+                $notification->is_ForStaff = 1;
+                $notification->usermanagement = 1;
+                $notification->save();
 
             }else{
                 throw ValidationException::withMessages([

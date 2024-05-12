@@ -123,6 +123,7 @@ components:{},
 setup(){
     const application = ref([])
     const loading = ref(true)
+    const isApplicant = ref(true)
     const router = useRouter()
     const form = reactive({
       page: 1,
@@ -212,8 +213,22 @@ setup(){
       index(payload)
     }
         const editRecord = (record) => {
-            router.push({path: '/edit/appointment/calendar/' + record.id,
-            query: {archive: 'false'}
+
+            axios.get('backend/auth_user')
+                        .then(response => {
+                            
+                        isApplicant.value = response.data.role == 'Applicant' ? true:false
+
+                        if(isApplicant.value == true){
+                            router.push({path: '/edit/appointment/calendar/' + record.id,
+                            query: {archive: 'false'}
+                            })
+                        }else{
+                            router.push({path: '/edit/business-application/' + record.application_id,
+                            query: {archive: 'false'}
+                            })
+                        }
+
             })
     }
 
