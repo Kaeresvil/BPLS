@@ -15,7 +15,8 @@ class Notification extends Model
         'title',
         'description',
         'is_read',
-        'is_ForStaff'
+        'is_ForStaff',
+        'usermanagement'
     ];
 
 }

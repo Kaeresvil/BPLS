@@ -490,6 +490,7 @@ class ApplicationController extends Controller
         $notification->description = $description;
         $notification->is_read = 0;
         $notification->is_ForStaff = 1;
+        $notification->usermanagement = 0;
         $notification->save();
     }
     public function ApproveAndReeturnNotification($params, $id)
@@ -502,6 +503,7 @@ class ApplicationController extends Controller
         $notification->description = "Reference No.: ".$params->ref_no." has been ".$status.".";
         $notification->is_read = 0;
         $notification->is_ForStaff = 0;
+        $notification->usermanagement = 0;
         $notification->save();
     }
 

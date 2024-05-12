@@ -5,9 +5,9 @@
                 <div class="content" style="height: 100px; display: flex;">
                      <img style=" max-width: 100%; height: auto;  margin-left: 15px" src="/img/curimao-logo.png" />
                      <div class="content-1" style="width: 580px;  padding-top: 20px; padding-left: 15px;">
-                        <p style="font-weight:bold; font-size: 18px;">BUSINESS PERMIT AND LICENSE SYSTEM</p>
+                        <p style="font-weight:bold; font-size: 18px;">BUSINESS PERMIT AND LICENSE SERVICE</p>
                         <div style="border:2px solid #af1818; margin-top: -17px;"></div>
-                        <p style="font-weight:bold; font-size: 18px;">MUNICIPALITY OF CURRIMAO ILOCOS, NORTE</p>
+                        <p style="font-weight:bold; font-size: 18px;">MUNICIPALITY OF CURRIMAO, ILOCOS NORTE</p>
                      </div>
                      
                 </div>

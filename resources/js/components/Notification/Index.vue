@@ -102,8 +102,11 @@ setup(){
             const goToNotif = (notif) => {
         axios.put(`/backend/read/${notif.id}`)
         .then(response => {
-             
+            if(notif.usermanagement == 0){
             window.location.href = '/edit/business-application/' + response.data.data.application_id
+            }else{
+                window.location.href = '/edit/users/' + response.data.data.application_id
+            }
 
 
                  
