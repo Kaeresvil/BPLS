@@ -220,6 +220,7 @@ setup(){
                 index()     
             })
             .catch(function (error) {
+                setTimeout(Math.random() > 0.5 ? resolve : reject, 100);
                 loading.value = false
             });
             
