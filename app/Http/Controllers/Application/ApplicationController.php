@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use App\Mail\ApproveEmail;
 use App\Mail\ReturnEmail;
+use App\Http\Requests\ApplicationRequest;
 
 class ApplicationController extends Controller
 {
@@ -52,7 +53,7 @@ class ApplicationController extends Controller
         return $ref_no;
     }
 
-    public function store(Request $request)
+    public function store(ApplicationRequest $request)
     {
 
         $result = $this->generateRefNumber();
@@ -82,7 +83,9 @@ class ApplicationController extends Controller
 
        $this->createBusinessActivity($request->business_activity, $application->id);
        $this->createBusinessInformations($request, $application->id);
+       if($request->lessors_fullname != '' || $request->lessors_fullname != null && $request->lessors_address != '' || $request->lessors_address != null  && $request->lessors_email != '' || $request->lessors_email != null && $request->lessors_tel_no != '' || $request->lessors_tel_no != null  && $request->monthly_rental != '' || $request->monthly_rental != null){
        $this->createLessors($request, $application->id);
+       }
        $this->createOwnersInformation($request, $application->id);
        $this->createNotification($request, $application->id, true);
 
@@ -154,7 +157,7 @@ class ApplicationController extends Controller
 
     //// Update Application
 
-    public function update(Request $request , $id)
+    public function update(ApplicationRequest $request , $id)
     {
 
         $application =  Application::find($id);
@@ -178,7 +181,11 @@ class ApplicationController extends Controller
 
        $this->updateBusinessActivity($request->business_activity, $application->id);
        $this->updateBusinessInformations($request, $application->id);
+       if($request->lessors_fullname != '' || $request->lessors_fullname != null && $request->lessors_address != '' || $request->lessors_address != null  && $request->lessors_email != '' || $request->lessors_email != null && $request->lessors_tel_no != '' || $request->lessors_tel_no != null  && $request->monthly_rental != '' || $request->monthly_rental != null){
        $this->updateLessors($request, $application->id);
+       }else{
+        Lessor::where('application_id', $application->id)->delete();
+       }
        $this->updateOwnersInformation($request, $application->id);
 
        if($request->status == 'RETURNED'){
@@ -245,6 +252,7 @@ class ApplicationController extends Controller
     public function updateLessors($params, $id)
     {
         $lessor = Lessor::where('application_id', $id)->first();
+        if($lessor){
         $lessor->application_id = $id;
         $lessor->lessors_fullname = $params->lessors_fullname;
         $lessor->lessors_address = $params->lessors_address;
@@ -252,6 +260,9 @@ class ApplicationController extends Controller
         $lessor->lessors_email = $params->lessors_email;
         $lessor->monthly_rental = $params->monthly_rental;
         $lessor->update();
+        }else{
+            $this->createLessors($params, $id);
+        }
 
     }
     public function updateOwnersInformation($params, $id)
