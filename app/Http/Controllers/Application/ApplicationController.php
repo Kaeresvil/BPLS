@@ -32,6 +32,7 @@ class ApplicationController extends Controller
     {
 
         $count = Application::latest('created_at')->first();
+
         if($count){
         $count = $count->id + 1;
         }else{
