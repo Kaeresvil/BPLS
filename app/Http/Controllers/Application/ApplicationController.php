@@ -32,8 +32,11 @@ class ApplicationController extends Controller
     {
 
         $count = Application::latest('created_at')->first();
-
+        if(count($count) != 0){
         $count = $count->id + 1;
+        }else{
+            $count = 1;
+        }
 
         if ($count < 10) {
             $ref_no = "BPLS-0000" . ($count);
