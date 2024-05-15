@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UsersId;
 use App\Models\Notification;
+use App\Models\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -239,6 +240,12 @@ class UserController extends Controller
     public function delete($id)
     {
         $user = User::find($id);
+        $applications = Application::where('applicant_id', $user->id)->get();
+        if(count($applications) != 0){
+            throw ValidationException::withMessages([
+                'authentication' => "The user account has a transaction with a business application.",
+            ]);
+        }
         $user->delete();
         $response = [
             'data' => $user,
