@@ -900,6 +900,29 @@ setup() {
             }); 
           }
     }
+    if (steps[current.value].content == 'business-act'){
+     
+      const complete1 = form.lessors_fullname !== '' && form.monthly_rental === '' 
+      const complete2 = form.lessors_address !== '' && form.monthly_rental === '' 
+      const complete3 = form.lessors_email !== '' && form.monthly_rental === '' 
+      const complete4 = form.lessors_tel_no !== '' && form.monthly_rental === ''
+
+if (complete1  || complete2 || complete3 || complete4  ) {
+        current.value--;
+          Modal.error({
+            title: () => 'Error!',
+            content: () => 'Please fill out all fields on lessors',
+            okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', // Change the color of the OK button here
+            borderColor: '#24792f', // Change the border color of the OK button here
+            color: 'white', // Change the text color of the OK button here
+            },
+        },
+          }); 
+
+      }
+    }
     if (steps[current.value].content == 'other-info'){
       if(form.type_of_application == '' || form.mode_of_payment == '' || form.date_of_application == ''){
         current.value--;
@@ -1399,11 +1422,13 @@ setup() {
                         form.contact_person_email = res.data.owner_information.contact_person_email
                         form.contact_person_mobile_no = res.data.owner_information.contact_person_mobile_no
 
+                        if(res.data.lessor){
                         form.lessors_fullname = res.data.lessor.lessors_fullname
                         form.lessors_email = res.data.lessor.lessors_email
                         form.lessors_address = res.data.lessor.lessors_address
                         form.lessors_tel_no = res.data.lessor.lessors_tel_no
                         form.monthly_rental = res.data.lessor.monthly_rental
+                        }
                         form.status = res.data.status
 
                         let c = 0;
@@ -1500,7 +1525,7 @@ setup() {
                 .catch(function (error) {
                     loading.value = false
                 });
-            loading.value = false
+            // loading.value = false
         })
         .catch(function (error) {
             loading.value = false
