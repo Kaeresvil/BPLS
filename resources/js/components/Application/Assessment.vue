@@ -126,10 +126,12 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, reactive,toRefs } from 'vue';
+import { createVNode,defineComponent, ref, onMounted, reactive,toRefs } from 'vue';
 import axios from "../../axios"
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
+import { Modal } from 'ant-design-vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
 export default defineComponent({
 components:{},
@@ -341,15 +343,36 @@ setup(props){
                     });
         }
         const submitAssessment = () => {
-            console.log(assessments.value);
+
+          Modal.confirm({
+        title: () => 'Are you sure? You want to submit the assessment',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
             loading.value = true
             axios.post(`/backend/assessment`,assessments.value)
         .then(res => { 
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         })
         .catch(function (error) {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         });
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
         }
         const inputAmount = (assessment, index) => {
         assessment.amount = assessment.amount == '' ? 0:assessment.amount

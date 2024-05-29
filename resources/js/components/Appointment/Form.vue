@@ -57,12 +57,14 @@
 </template>
 
 <script >
-import { defineComponent, reactive, ref, onMounted, watch } from "vue";
+import { createVNode, defineComponent, reactive, ref, onMounted, watch } from "vue";
 import axios from "../../axios"
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
 import moment from 'moment';
 import dayjs from 'dayjs';
+import { Modal } from 'ant-design-vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
 export default defineComponent({
 setup() {
@@ -126,31 +128,75 @@ setup() {
 
     };
     const submitAppointment = () => {
-       form.application_id = parseInt(route.params.id)
+      Modal.confirm({
+        title: () => 'Are you sure? You want to set the appointment',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
+            form.application_id = parseInt(route.params.id)
        loading.value = true,
         axios.post(`backend/appointment`,form)
         .then(response => { 
             loading.value = false,
+            setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             router.push('/appointment')
 
                  
         })
         .catch(function (error) {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         });
+
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
+      
 
     };
     const updateAppointment = () => {
-       loading.value = true,
+      Modal.confirm({
+        title: () => 'Are you sure? You want to update the appointment',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
+            loading.value = true,
         axios.put(`/backend/appointment/${route.params.id}`,form)
         .then(res => { 
             loading.value = false
+            setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
           router.push('/appointment')
         })
         .catch(function (error) {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         });
 
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
     };
 
     watch(notAvailableDay, () => {
