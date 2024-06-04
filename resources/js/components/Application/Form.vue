@@ -55,6 +55,13 @@
         ></Assessment>
 
           </a-modal>
+        <a-modal v-model:visible="visibleOR" title="Official Receipt" :footer="null" style="width: 56%;">
+          <OfficialReceipt
+        :data="form"
+        :authName="authName"
+        ></OfficialReceipt>
+
+          </a-modal>
 
         <a-modal style="width: 55%;" v-model:visible="visibleSummaryForm" title="Uploaded Documents" :footer="null">
           <div style="margin: auto;">
@@ -104,6 +111,15 @@
                     :loading="false"
                   >
                     Assessment
+            </a-button>
+          <a-button
+          v-if="form.status == 'CLAIMED'"
+            style="margin-right: 5px"
+                    @click="visibleOR = true"
+                    class="buttoncreate"
+                    :loading="false"
+                  >
+                    Official Receipt
             </a-button>
           <a-button
           v-if="form.status == 'APPROVED' && !isApplicant"
@@ -857,12 +873,14 @@ import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import Swal from "sweetalert2";
 import Summary from "./Summary.vue"
 import Assessment from "./Assessment.vue"
+import OfficialReceipt from "./OR.vue"
 
 
 export default defineComponent({
   components: {
     Summary,
-    Assessment
+    Assessment,
+    OfficialReceipt
   },
 setup() {
   const router = useRouter();
@@ -871,8 +889,10 @@ setup() {
   const loading2 = ref(false)
   const visible = ref(false)
   const isApplicant = ref(true)
+  const authName = ref()
   const visibleSummaryForm = ref(false)
   const visibleAssessment = ref(false)
+  const visibleOR = ref(false)
   const dateFormat = "YYYY-MM-DD";
       const acceptedFiles = ref(['.png','.jpeg','.jpg'])
 //   const api = 'http://127.0.0.1:8000/api/';
@@ -1372,6 +1392,7 @@ if (complete1  || complete2 || complete3 || complete4  ) {
       loading.value = true
             axios.get('backend/auth_user')
                         .then(response => {
+                          authName.value = response.data.full_name
                         form.first_name = response.data.first_name
                         form.middle_name = response.data.middle_name
                         form.last_name = response.data.last_name
@@ -1809,8 +1830,10 @@ if (complete1  || complete2 || complete3 || complete4  ) {
     visible,
     visibleSummaryForm,
     visibleAssessment,
+    visibleOR,
     acceptedFiles,
     isApplicant,
+    authName,
     dateFormat,
 
     newDocument,

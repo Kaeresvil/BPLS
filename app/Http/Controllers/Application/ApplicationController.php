@@ -451,6 +451,7 @@ class ApplicationController extends Controller
         }
         $appointment->date_claimed = Carbon::now()->format('Y-m-d');
         $appointment->is_claimed = 1;
+        $appointment->actioned_by_id = Auth::user()->id;;
         $appointment->update();
 
         $post = Application::find($id);
