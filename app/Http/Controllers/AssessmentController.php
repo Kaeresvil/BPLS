@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Assessment;
+use App\Models\Appointment;
 use Illuminate\Support\Facades\Log;
 
 class AssessmentController extends Controller
@@ -35,5 +36,16 @@ class AssessmentController extends Controller
     {
         $occu = Assessment::where('application_id', $id)->get();
         return response()->json($occu);
+    }
+    public function getOR($id)
+    {
+        $record = collect();
+        $result = Assessment::where('application_id', $id)->where('total','!=', 0)->get();
+        $appointment =  Appointment::where('application_id', $id)->first();
+
+        $record->push($result);
+        $record->push($appointment);
+
+        return response()->json($record);
     }
 }

@@ -55,6 +55,13 @@
         ></Assessment>
 
           </a-modal>
+        <a-modal v-model:visible="visibleOR" title="Official Receipt" :footer="null" style="width: 56%;">
+          <OfficialReceipt
+        :data="form"
+        :authName="authName"
+        ></OfficialReceipt>
+
+          </a-modal>
 
         <a-modal style="width: 55%;" v-model:visible="visibleSummaryForm" title="Uploaded Documents" :footer="null">
           <div style="margin: auto;">
@@ -104,6 +111,15 @@
                     :loading="false"
                   >
                     Assessment
+            </a-button>
+          <a-button
+          v-if="form.status == 'CLAIMED'"
+            style="margin-right: 5px"
+                    @click="visibleOR = true"
+                    class="buttoncreate"
+                    :loading="false"
+                  >
+                    Official Receipt
             </a-button>
           <a-button
           v-if="form.status == 'APPROVED' && !isApplicant"
@@ -846,22 +862,25 @@
 </template>
 
 <script >
-import { defineComponent, onMounted,reactive, ref } from "vue";
+import {createVNode, defineComponent, onMounted,reactive, ref } from "vue";
 import axios from "../../axios"
 import { useRouter, useRoute } from "vue-router";
 import moment from "moment";
 import dayjs from 'dayjs';
 import { Modal } from 'ant-design-vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
 import Swal from "sweetalert2";
 import Summary from "./Summary.vue"
 import Assessment from "./Assessment.vue"
+import OfficialReceipt from "./OR.vue"
 
 
 export default defineComponent({
   components: {
     Summary,
-    Assessment
+    Assessment,
+    OfficialReceipt
   },
 setup() {
   const router = useRouter();
@@ -870,8 +889,10 @@ setup() {
   const loading2 = ref(false)
   const visible = ref(false)
   const isApplicant = ref(true)
+  const authName = ref()
   const visibleSummaryForm = ref(false)
   const visibleAssessment = ref(false)
+  const visibleOR = ref(false)
   const dateFormat = "YYYY-MM-DD";
       const acceptedFiles = ref(['.png','.jpeg','.jpg'])
 //   const api = 'http://127.0.0.1:8000/api/';
@@ -1371,6 +1392,7 @@ if (complete1  || complete2 || complete3 || complete4  ) {
       loading.value = true
             axios.get('backend/auth_user')
                         .then(response => {
+                          authName.value = response.data.full_name
                         form.first_name = response.data.first_name
                         form.middle_name = response.data.middle_name
                         form.last_name = response.data.last_name
@@ -1489,105 +1511,137 @@ if (complete1  || complete2 || complete3 || complete4  ) {
 
   const submitApplication = async() => {
 
-    if(!route.path.includes("edit")){
-    const formData = new FormData();
+  
+    Modal.confirm({
+        title: () => 'Are you sure? You want to submit the appication',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
 
-   
 
-      if(form.type_of_application == 'New'){
-            for (var i = 0; i < newDocument.value.length; i++) {
-                let file = newDocument.value[i].file;
-                formData.append("files[" + i + "]", file);
-                formData.append("document[" + i + "]", newDocument.value[i].document);
-                formData.append("key[" + i + "]", newDocument.value[i].key);
-              }
+        if(!route.path.includes("edit")){
+          const formData = new FormData();
 
-        }else{
-              for (var i = 0; i < renewDocument.value.length; i++) {
-                let file = renewDocument.value[i].file;
-                formData.append("files[" + i + "]", file);
-                formData.append("document[" + i + "]", renewDocument.value[i].document);
-                formData.append("key[" + i + "]", renewDocument.value[i].key);
-              }
-        }
+        
 
-   
-    loading.value = true
-   axios.post(`/backend/application`,form)
-        .then(res => { 
-          formData.append("id", res.data.data.id)
+            if(form.type_of_application == 'New'){
+                  for (var i = 0; i < newDocument.value.length; i++) {
+                      let file = newDocument.value[i].file;
+                      formData.append("files[" + i + "]", file);
+                      formData.append("document[" + i + "]", newDocument.value[i].document);
+                      formData.append("key[" + i + "]", newDocument.value[i].key);
+                    }
 
-           axios.post("backend/documents",formData)
-                .then(response => { 
-                  loading.value = false
-                  router.push('/business-application')
-                })
-                .catch(function (error) {
-                    loading.value = false
-                });
-            // loading.value = false
-        })
-        .catch(function (error) {
-            loading.value = false
-        });
-      }else{
-        loading.value = true
-        const formData = new FormData();
-        formData.append("id", route.params.id);
-
-        const isNotEmptyFile = form.type_of_application == 'New'? newDocument.value.some(item => item.file.length !== 0):renewDocument.value.some(item => item.file.length !== 0);
-        console.log('some is empty')
-        console.log(isNotEmptyFile)
-          if (isNotEmptyFile) {
-      if(form.type_of_application == 'New'){
-        let c = 0
-            for (var i = 0; i < newDocument.value.length; i++) {
-              if(newDocument.value[i].file.length == undefined){
-                let file = newDocument.value[i].file;
-                formData.append("files[" + c + "]", file);
-                formData.append("f_id[" + c + "]", newDocument.value[i].id);
-                formData.append("remove[" + c + "]", newDocument.value[i].file_path);
-              }
-              }
-
-        }else{
-            let rc = 0
-              for (var i = 0; i < renewDocument.value.length; i++) {
-                if(renewDocument.value[i].file.length == undefined){
-                let file = renewDocument.value[i].file;
-                formData.append("files[" + rc + "]", file);
-                formData.append("f_id[" + rc + "]", renewDocument.value[i].id);
-                formData.append("remove[" + rc + "]", renewDocument.value[i].file_path);
-                rc++
-                }
-              
-              }
-        }
-
-          }
-
-        axios.put(`/backend/application/update/${route.params.id}`,form)
-        .then(response => {
-          if (isNotEmptyFile) { 
-          axios.post("backend/documents/update",formData)
-                .then(response => { 
-                  router.push('/business-application')
-                })
-                .catch(function (error) {
-                    loading.value = false
-                });
               }else{
-            loading.value = false
-            router.push('/business-application')
+                    for (var i = 0; i < renewDocument.value.length; i++) {
+                      let file = renewDocument.value[i].file;
+                      formData.append("files[" + i + "]", file);
+                      formData.append("document[" + i + "]", renewDocument.value[i].document);
+                      formData.append("key[" + i + "]", renewDocument.value[i].key);
+                    }
+              }
+
+        
+          loading.value = true
+        axios.post(`/backend/application`,form)
+              .then(res => { 
+                formData.append("id", res.data.data.id)
+
+                axios.post("backend/documents",formData)
+                      .then(response => { 
+                        loading.value = false
+                        setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                        router.push('/business-application')
+                      })
+                      .catch(function (error) {
+                        setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                          loading.value = false
+                      });
+                  // loading.value = false
+              })
+              .catch(function (error) {
+                setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                  loading.value = false
+              });
+            }else{
+              loading.value = true
+              const formData = new FormData();
+              formData.append("id", route.params.id);
+
+              const isNotEmptyFile = form.type_of_application == 'New'? newDocument.value.some(item => item.file.length !== 0):renewDocument.value.some(item => item.file.length !== 0);
+              console.log('some is empty')
+              console.log(isNotEmptyFile)
+                if (isNotEmptyFile) {
+            if(form.type_of_application == 'New'){
+              let c = 0
+                  for (var i = 0; i < newDocument.value.length; i++) {
+                    if(newDocument.value[i].file.length == undefined){
+                      let file = newDocument.value[i].file;
+                      formData.append("files[" + c + "]", file);
+                      formData.append("f_id[" + c + "]", newDocument.value[i].id);
+                      formData.append("remove[" + c + "]", newDocument.value[i].file_path);
+                    }
+                    }
+
+              }else{
+                  let rc = 0
+                    for (var i = 0; i < renewDocument.value.length; i++) {
+                      if(renewDocument.value[i].file.length == undefined){
+                      let file = renewDocument.value[i].file;
+                      formData.append("files[" + rc + "]", file);
+                      formData.append("f_id[" + rc + "]", renewDocument.value[i].id);
+                      formData.append("remove[" + rc + "]", renewDocument.value[i].file_path);
+                      rc++
+                      }
+                    
+                    }
+              }
+
+                }
+
+              axios.put(`/backend/application/update/${route.params.id}`,form)
+              .then(response => {
+                if (isNotEmptyFile) { 
+                axios.post("backend/documents/update",formData)
+                      .then(response => { 
+                        setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                        router.push('/business-application')
+                      })
+                      .catch(function (error) {
+                        setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                          loading.value = false
+                      });
+                    }else{
+                  loading.value = false
+                  setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                  router.push('/business-application')
+                  }
+
+                      
+              })
+              .catch(function (error) {
+                setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
+                  loading.value = false
+              });
+
             }
+                
+            
+          }).catch(() => console.log('Oops errors!'));
+        },  
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f',
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
 
-                 
-        })
-        .catch(function (error) {
-            loading.value = false
-        });
 
-      }
 
   }
   const selectDateDTI = (e) => {
@@ -1647,36 +1701,104 @@ if (complete1  || complete2 || complete3 || complete4  ) {
     };
     const approveApplication = () => {
 
-      loading.value = true
+      Modal.confirm({
+        title: () => 'Are you sure? You want to approve the application',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
+            loading.value = true
    axios.put(`/backend/application/approve/${route.params.id}`,form)
         .then(res => { 
           loading.value = false
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
           router.push('/business-application')
         })
         .catch(function (error) {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         });
-     
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
+
     };
     const returnApplication = () => {
-      loading.value = true
+
+      Modal.confirm({
+        title: () => 'Are you sure? You want to return the application',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
+            loading.value = true
    axios.put(`/backend/application/return/${route.params.id}`,form)
         .then(res => {
           loading.value = false 
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
           router.push('/business-application')
         })
         .catch(function (error) {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
             loading.value = false
         });
+       
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
     };
     const applicationClaimed = () => {
-      axios.put(`/backend/application/claimed/${route.params.id}`,form)
+
+      Modal.confirm({
+        title: () => 'Are you sure, permit application has been claimed?',
+        icon: () => createVNode(ExclamationCircleOutlined),
+        okText: () => "Yes",
+        cancelText: () => "No",
+        onOk() {
+          return new Promise((resolve, reject) => {
+
+            axios.put(`/backend/application/claimed/${route.params.id}`,form)
             .then(res => { 
+              setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
               router.push('/business-application')
             })
             .catch(function (error) {
+              setTimeout(Math.random() > 0.5 ? resolve : reject, 2500);
                 loading.value = false
             });
+
+          }).catch(() => console.log('Oops errors!'));
+        },
+        onCancel() {},
+        okButtonProps: {
+            style: {
+            backgroundColor: '#24792f', 
+            borderColor: '#24792f', 
+            color: 'white', 
+            },
+        },
+      });
+     
     };
 
     const addFile = () => {
@@ -1708,8 +1830,10 @@ if (complete1  || complete2 || complete3 || complete4  ) {
     visible,
     visibleSummaryForm,
     visibleAssessment,
+    visibleOR,
     acceptedFiles,
     isApplicant,
+    authName,
     dateFormat,
 
     newDocument,

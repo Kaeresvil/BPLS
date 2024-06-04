@@ -88,4 +88,6 @@ Route::group(['prefix' => 'backend','middleware' => 'auth:sanctum'], function() 
      Route::post('assessment', [AssessmentController::class,'store']);
      Route::get('assessment/{id}', [AssessmentController::class,'show']);
 
+     Route::get('official_receipt/{id}', [AssessmentController::class,'getOR']);
+
 });

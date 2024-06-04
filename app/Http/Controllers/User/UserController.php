@@ -144,7 +144,9 @@ class UserController extends Controller
             if($request->password == $request->confirmpassword){
                 $user->save();
                 $data = $user;
-                $message = "Register Account Successfully";
+                $message =  $request->isapplicant ? "Registration Seat for Verification": "Register Account Successfully";
+
+                if($request->isapplicant){
 
                 $notification = new Notification();
 
@@ -155,6 +157,7 @@ class UserController extends Controller
                 $notification->is_ForStaff = 1;
                 $notification->usermanagement = 1;
                 $notification->save();
+                }
 
             }else{
                 throw ValidationException::withMessages([
